@@ -258,8 +258,8 @@ AIHub/
 - [x] Phase 2 — AI 记忆系统（BGE embedding + ChromaDB 语义搜索 + 自动摘要）
 - [x] Phase 3 — 智能关联（相关对话推荐 + 标签聚类项目聚合）
 - [x] Phase 4 — 知识图谱（D3.js 力导向图 + 对话-标签关联网络）
-- [x] Phase 5 — 上下文注入（向量搜索定位种子 → 图谱遍历发现关联链 → 一键注入）
-- [x] Phase 8 — Personal AI OS（Chrome 侧边栏随身记忆，任意 AI 平台随时唤起图谱驱动上下文）
-- [x] Phase 9 — 团队知识沉淀（user_id 标记 + 按人筛选 + 共享后端 → 小团队 AI 知识库）
-- [ ] Phase 10 — 更多信息源（微信、邮件、GitHub、Notion、Obsidian）
-- [ ] Phase 11 — Tauri 桌面壳打包
+- [x] Phase 5 — 上下文注入（图谱驱动检索 + 智能截断 + Token 估算 + 一键注入）
+- [x] Phase 6 — Personal AI OS（Chrome 侧边栏随身记忆 + 后端地址可配置）
+- [x] Phase 7 — 团队知识沉淀（user_id 标记 + 按人筛选 + 共享后端 → 团队 AI 知识库）
+- [ ] Phase 8 — 更多信息源（微信、邮件、GitHub、Notion、Obsidian）
+- [ ] Phase 9 — Tauri 桌面壳打包
