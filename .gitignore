@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# ChromaDB
+.chromadb/
+
+# SQLite
+*.db
+
+# Embedding models
+backend/.models/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store

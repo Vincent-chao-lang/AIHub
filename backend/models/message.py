@@ -73,6 +73,17 @@ class RelatedConversation(SQLModel):
     latest_timestamp: datetime
 
 
+class ContextRequest(SQLModel):
+    query: str
+
+
+class ContextResponse(SQLModel):
+    query: str
+    context_text: str  # 可直接复制注入的上下文段落
+    key_points: list[str]  # 关键历史发现
+    related: list[RelatedConversation]
+
+
 class ProjectGroup(SQLModel):
     name: str
     keywords: list[str]

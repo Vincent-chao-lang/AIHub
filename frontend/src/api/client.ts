@@ -1,4 +1,4 @@
-import type { Message, TimelineGroup, SearchResult, Stats, RelatedConversation, ProjectGroup } from "../types";
+import type { Message, TimelineGroup, SearchResult, Stats, RelatedConversation, ProjectGroup, ContextResponse } from "../types";
 
 const API_BASE = "http://127.0.0.1:8712";
 
@@ -40,5 +40,12 @@ export const api = {
 
   getProjects(): Promise<ProjectGroup[]> {
     return request("/projects");
+  },
+
+  getContext(query: string): Promise<ContextResponse> {
+    return request("/context", {
+      method: "POST",
+      body: JSON.stringify({ query }),
+    });
   },
 };

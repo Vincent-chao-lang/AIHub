@@ -26,6 +26,12 @@ export default function Layout() {
           >
             项目
           </button>
+          <button
+            className={`nav-tab ${isActive("/context") ? "active" : ""}`}
+            onClick={() => navigate("/context")}
+          >
+            上下文
+          </button>
         </nav>
         <div className="header-right">
           <span className="subtitle">智能记忆，随时回溯</span>

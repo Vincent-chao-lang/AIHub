@@ -17,6 +17,8 @@ from models.message import (
     MessageCreate,
     MessageResponse,
     ConversationSummary,
+    ContextRequest,
+    ContextResponse,
     SearchRequest,
     SearchResult,
     TimelineGroup,
@@ -24,7 +26,7 @@ from models.message import (
     ProjectGroup,
 )
 from services.search import keyword_search
-from services import summarizer
+from services import summarizer, context
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -230,6 +232,67 @@ def search_messages(req: SearchRequest, session: Session = Depends(get_session))
         SearchResult(message=MessageResponse.model_validate(msg), score=0.3)
         for msg in fallback
     ]
+
+
+@router.post("/context", response_model=ContextResponse)
+def get_context(req: ContextRequest, session: Session = Depends(get_session)):
+    """生成上下文注入文本：输入当前讨论主题，返回可复制到 AI 平台的历史上下文。"""
+    # 向量检索相关消息
+    vector_results = chroma_client.search_similar(req.query, top_k=30)
+
+    related_messages = []
+    related_convs = []
+
+    for item in vector_results:
+        msg = session.get(Message, item["id"])
+        if msg:
+            related_messages.append(msg)
+
+    # 收集相关对话摘要
+    seen_convs = set()
+    for msg in related_messages:
+        if msg.conversation_id in seen_convs:
+            continue
+        seen_convs.add(msg.conversation_id)
+        related_convs.append({
+            "conversation_id": msg.conversation_id,
+            "platform": msg.platform,
+            "title": msg.title or msg.content[:60],
+            "score": 1.0,
+            "message_count": 0,
+            "latest_timestamp": msg.timestamp,
+        })
+
+    # 生成上下文
+    context_text, key_points = context.build_context(
+        req.query, related_messages, related_convs
+    )
+
+    # 构建关联对话列表
+    related_list = []
+    for conv_data in related_convs[:5]:
+        conv_msgs = session.exec(
+            select(Message)
+            .where(Message.conversation_id == conv_data["conversation_id"])
+            .order_by(Message.timestamp.desc())
+        ).all()
+        msg_count = len(conv_msgs)
+        latest = conv_msgs[0].timestamp if conv_msgs else conv_data["latest_timestamp"]
+        related_list.append(RelatedConversation(
+            conversation_id=conv_data["conversation_id"],
+            title=conv_data["title"],
+            platform=conv_data["platform"],
+            score=conv_data["score"],
+            message_count=msg_count,
+            latest_timestamp=latest,
+        ))
+
+    return ContextResponse(
+        query=req.query,
+        context_text=context_text,
+        key_points=key_points,
+        related=related_list,
+    )
 
 
 @router.post("/summarize/{conversation_id}")

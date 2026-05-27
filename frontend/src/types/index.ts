@@ -53,6 +53,13 @@ export interface ProjectGroup {
   total_messages: number;
 }
 
+export interface ContextResponse {
+  query: string;
+  context_text: string;
+  key_points: string[];
+  related: RelatedConversation[];
+}
+
 export const PLATFORM_LABELS: Record<string, string> = {
   chatgpt: "ChatGPT",
   claude: "Claude",
