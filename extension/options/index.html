@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Memory Hub 设置</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --surface: #fff;
+    --border: #e5e7eb;
+    --text: #374151;
+    --text-secondary: #6b7280;
+    --accent: #3b82f6;
+    --radius: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2e303a;
+      --text: #d1d5db;
+      --text-secondary: #9ca3af;
+      --accent: #60a5fa;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+  h1 { font-size: 18px; color: var(--text); margin-bottom: 4px; }
+  .sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: monospace;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+  }
+  .form-group input:focus { border-color: var(--accent); }
+  .form-group .hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  button {
+    padding: 10px 24px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { opacity: 0.9; }
+
+  .toast {
+    display: inline-block;
+    margin-left: 12px;
+    color: #16a34a;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    padding: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.online { background: #16a34a; }
+  .status-dot.offline { background: #dc2626; }
+</style>
+</head>
+<body>
+
+<h1>&#x1F9E0; AI Memory Hub 设置</h1>
+<p class="sub">配置后端 API 地址。本地模式使用 localhost，服务器模式填入你的服务器地址。</p>
+
+<div class="form-group">
+  <label for="apiUrl">后端 API 地址</label>
+  <input type="text" id="apiUrl" placeholder="http://127.0.0.1:8712" />
+  <div class="hint">默认 http://127.0.0.1:8712（本地模式）</div>
+</div>
+
+<button id="saveBtn">保存</button>
+<span class="toast" id="toast">已保存</span>
+
+<div class="status-line" id="statusLine" style="display:none;">
+  <span class="status-dot" id="statusDot"></span>
+  <span id="statusText">检测中...</span>
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>

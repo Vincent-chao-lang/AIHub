@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "AI Memory Hub",
-  "version": "0.1.0",
-  "description": "自动记录和检索 AI 对话历史的本地长期记忆系统",
-  "permissions": ["storage", "alarms"],
+  "version": "0.2.0",
+  "description": "Personal AI OS — 跨平台 AI 长期记忆系统。自动记录、检索、关联你的所有 AI 对话。",
+  "permissions": ["storage", "alarms", "sidePanel"],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
@@ -11,8 +11,20 @@
     "https://gemini.google.com/*",
     "https://kimi.moonshot.cn/*",
     "https://chat.deepseek.com/*",
-    "http://127.0.0.1:8712/*"
+    "http://127.0.0.1:8712/*",
+    "http://*/*",
+    "https://*/*"
   ],
+  "options_ui": {
+    "page": "options/index.html",
+    "open_in_tab": false
+  },
+  "action": {
+    "default_title": "AI Memory Hub — 打开记忆侧边栏"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
+  },
   "background": {
     "service_worker": "background/index.js"
   },

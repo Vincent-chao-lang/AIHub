@@ -53,11 +53,21 @@ export interface ProjectGroup {
   total_messages: number;
 }
 
+export interface TraversalPath {
+  conversation_id: string;
+  title: string;
+  platform: string;
+  distance: number;
+  score: number;
+  path: string[];
+}
+
 export interface ContextResponse {
   query: string;
   context_text: string;
   key_points: string[];
   related: RelatedConversation[];
+  graph_traversal: TraversalPath[];
 }
 
 export interface GraphNode {

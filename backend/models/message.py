@@ -77,11 +77,21 @@ class ContextRequest(SQLModel):
     query: str
 
 
+class TraversalPath(SQLModel):
+    conversation_id: str
+    title: str
+    platform: str
+    distance: int  # 图谱跳数
+    score: float
+    path: list[str]  # 从种子到此节点的路径描述
+
+
 class ContextResponse(SQLModel):
     query: str
     context_text: str  # 可直接复制注入的上下文段落
     key_points: list[str]  # 关键历史发现
     related: list[RelatedConversation]
+    graph_traversal: list[TraversalPath] = []  # 图谱遍历路径
 
 
 class ProjectGroup(SQLModel):

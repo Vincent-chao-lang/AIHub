@@ -19,6 +19,7 @@ from models.message import (
     ConversationSummary,
     ContextRequest,
     ContextResponse,
+    TraversalPath,
     SearchRequest,
     SearchResult,
     TimelineGroup,
@@ -239,53 +240,95 @@ def search_messages(req: SearchRequest, session: Session = Depends(get_session))
 
 @router.post("/context", response_model=ContextResponse)
 def get_context(req: ContextRequest, session: Session = Depends(get_session)):
-    """生成上下文注入文本：输入当前讨论主题，返回可复制到 AI 平台的历史上下文。"""
-    # 向量检索相关消息
+    """图谱驱动的上下文注入：向量搜索定位种子 → 图谱遍历发现关联链 → 生成带推理路径的上下文。"""
+    # 步骤1: 向量检索 → 种子对话
     vector_results = chroma_client.search_similar(req.query, top_k=30)
 
-    related_messages = []
-    related_convs = []
+    seed_convs: list[dict] = []
+    related_messages: list[Message] = []
+    seen_convs = set()
 
     for item in vector_results:
         msg = session.get(Message, item["id"])
-        if msg:
-            related_messages.append(msg)
-
-    # 收集相关对话摘要
-    seen_convs = set()
-    for msg in related_messages:
-        if msg.conversation_id in seen_convs:
+        if not msg:
             continue
-        seen_convs.add(msg.conversation_id)
-        related_convs.append({
-            "conversation_id": msg.conversation_id,
-            "platform": msg.platform,
-            "title": msg.title or msg.content[:60],
-            "score": 1.0,
-            "message_count": 0,
-            "latest_timestamp": msg.timestamp,
-        })
+        related_messages.append(msg)
+        if msg.conversation_id not in seen_convs:
+            seen_convs.add(msg.conversation_id)
+            seed_convs.append({
+                "conversation_id": msg.conversation_id,
+                "score": item["score"],
+            })
 
-    # 生成上下文
-    context_text, key_points = context.build_context(
-        req.query, related_messages, related_convs
+    if not seed_convs:
+        return ContextResponse(
+            query=req.query, context_text="", key_points=[], related=[], graph_traversal=[]
+        )
+
+    # 步骤2: 构建图谱边（same logic as /graph endpoint）
+    all_tagged = session.exec(
+        select(Message)
+        .where(Message.tags.isnot(None))
+        .where(Message.tags != "")
+    ).all()
+
+    conv_tags_map: dict[str, set[str]] = {}
+    conv_meta_map: dict[str, dict] = {}
+    for msg in all_tagged:
+        cid = msg.conversation_id
+        if cid not in conv_tags_map:
+            conv_tags_map[cid] = {t.strip().lstrip("#").strip() for t in (msg.tags or "").split(",") if t.strip()}
+        if cid not in conv_meta_map:
+            conv_meta_map[cid] = {
+                "title": msg.title or msg.content[:60],
+                "platform": msg.platform,
+                "summary": msg.summary or (msg.content[:200] if msg.role == "assistant" else ""),
+                "tags": msg.tags or "",
+                "date": msg.timestamp.strftime("%Y-%m-%d"),
+            }
+
+    graph_edges: list[dict] = []
+    conv_ids = list(conv_tags_map.keys())
+    for i in range(len(conv_ids)):
+        for j in range(i + 1, len(conv_ids)):
+            a, b = conv_ids[i], conv_ids[j]
+            overlap = conv_tags_map[a] & conv_tags_map[b]
+            if len(overlap) >= 2:
+                graph_edges.append({
+                    "source": a, "target": b,
+                    "type": "similar",
+                    "weight": min(len(overlap) / 5, 1.0),
+                })
+
+    # 步骤3: 图谱遍历 + 生成上下文
+    context_text, key_points, traversal_paths = context.build_context_with_graph(
+        query=req.query,
+        seed_convs=seed_convs,
+        conv_meta=conv_meta_map,
+        edges=graph_edges,
+        max_hops=2,
+        top_n=8,
     )
 
-    # 构建关联对话列表
+    # 步骤4: 构建响应
     related_list = []
-    for conv_data in related_convs[:5]:
+    seen = set()
+    for tp in traversal_paths[:5]:
+        if tp["conversation_id"] in seen:
+            continue
+        seen.add(tp["conversation_id"])
+        cid = tp["conversation_id"]
         conv_msgs = session.exec(
-            select(Message)
-            .where(Message.conversation_id == conv_data["conversation_id"])
+            select(Message).where(Message.conversation_id == cid)
             .order_by(Message.timestamp.desc())
         ).all()
         msg_count = len(conv_msgs)
-        latest = conv_msgs[0].timestamp if conv_msgs else conv_data["latest_timestamp"]
+        latest = conv_msgs[0].timestamp if conv_msgs else datetime.now(timezone.utc)
         related_list.append(RelatedConversation(
-            conversation_id=conv_data["conversation_id"],
-            title=conv_data["title"],
-            platform=conv_data["platform"],
-            score=conv_data["score"],
+            conversation_id=cid,
+            title=tp["title"],
+            platform=tp["platform"],
+            score=tp["score"],
             message_count=msg_count,
             latest_timestamp=latest,
         ))
@@ -295,6 +338,17 @@ def get_context(req: ContextRequest, session: Session = Depends(get_session)):
         context_text=context_text,
         key_points=key_points,
         related=related_list,
+        graph_traversal=[
+            TraversalPath(
+                conversation_id=tp["conversation_id"],
+                title=tp["title"],
+                platform=tp["platform"],
+                distance=tp["distance"],
+                score=tp["score"],
+                path=tp["path"],
+            )
+            for tp in traversal_paths
+        ],
     )
 
 

@@ -7,11 +7,24 @@ const MessageFormat = {
   timestamp: "",       // ISO 8601
 };
 
-// API 地址
-const API_BASE = "http://127.0.0.1:8712";
+// 默认 API 地址（用户可在扩展选项中修改）
+const DEFAULT_API_BASE = "http://127.0.0.1:8712";
 
 // 已发送消息的缓存（避免重复发送）
 let sentMessages = new Set();
+
+// 从 storage 读取 API 地址
+function getApiBase() {
+  return new Promise((resolve) => {
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.get(["apiBaseUrl"], (result) => {
+        resolve(result.apiBaseUrl || DEFAULT_API_BASE);
+      });
+    } else {
+      resolve(DEFAULT_API_BASE);
+    }
+  });
+}
 
 // 生成消息 ID
 function generateMessageId(platform, conversationId, role, content) {
@@ -20,12 +33,12 @@ function generateMessageId(platform, conversationId, role, content) {
   for (let i = 0; i < text.length; i++) {
     const char = text.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   return `${platform}_${conversationId}_${Math.abs(hash)}`;
 }
 
-// 发送消息到本地 API
+// 发送消息到 API（读取 storage 中的自定义地址）
 async function sendToAPI(payload) {
   const msgId = generateMessageId(
     payload.platform,
@@ -37,7 +50,8 @@ async function sendToAPI(payload) {
   sentMessages.add(msgId);
 
   try {
-    const response = await fetch(`${API_BASE}/messages`, {
+    const apiBase = await getApiBase();
+    const response = await fetch(`${apiBase}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -46,7 +60,6 @@ async function sendToAPI(payload) {
       console.log("[AI Memory Hub] 消息已保存:", payload.platform, payload.role);
     }
   } catch (e) {
-    // API 未启动时静默失败
     console.debug("[AI Memory Hub] API 不可用:", e.message);
   }
 }

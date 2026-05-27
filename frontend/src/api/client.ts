@@ -1,6 +1,7 @@
 import type { Message, TimelineGroup, SearchResult, Stats, RelatedConversation, ProjectGroup, ContextResponse, GraphData } from "../types";
 
-const API_BASE = "http://127.0.0.1:8712";
+const DEFAULT_API_BASE = "http://127.0.0.1:8712";
+const API_BASE = localStorage.getItem("aihub_api_url") || DEFAULT_API_BASE;
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

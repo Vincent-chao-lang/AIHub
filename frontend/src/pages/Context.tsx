@@ -82,6 +82,38 @@ export default function Context() {
                 </div>
               )}
 
+              {/* 图谱遍历路径 */}
+              {result.graph_traversal && result.graph_traversal.length > 0 && (
+                <div className="context-traversal">
+                  <h4>图谱推理路径</h4>
+                  {result.graph_traversal.map((tp, i) => (
+                    <div key={i} className="traversal-item">
+                      <div className="traversal-header">
+                        <span className={`traversal-badge ${tp.distance === 0 ? "seed" : "discovered"}`}>
+                          {tp.distance === 0 ? "直接匹配" : `${tp.distance} 跳关联`}
+                        </span>
+                        <span className="traversal-score">
+                          强度 {(tp.score * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="traversal-title">
+                        [{PLATFORM_LABELS[tp.platform] || tp.platform}] {tp.title}
+                      </div>
+                      {tp.path.length > 1 && (
+                        <div className="traversal-path">
+                          {tp.path.map((step, j) => (
+                            <span key={j} className="traversal-step">
+                              {step}
+                              {j < tp.path.length - 1 && <span className="step-arrow"> → </span>}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* 上下文文本 */}
               <div className="context-output">
                 <div className="context-output-header">
@@ -144,15 +176,15 @@ export default function Context() {
             </div>
             <div className="hint-step">
               <span className="step-num">2</span>
-              <span>系统检索相关历史并生成上下文摘要</span>
+              <span>向量搜索定位种子对话，知识图谱遍历发现 N 层关联链</span>
             </div>
             <div className="hint-step">
               <span className="step-num">3</span>
-              <span>一键复制，粘贴到 ChatGPT/Claude/DeepSeek 等任意平台</span>
+              <span>一键复制上下文，粘贴到 ChatGPT/Claude/DeepSeek 等任意平台</span>
             </div>
             <div className="hint-step">
               <span className="step-num">4</span>
-              <span>AI 带着你的全部历史上下文来回答</span>
+              <span>AI 带着你的全部思维关联来回答</span>
             </div>
           </div>
         </div>

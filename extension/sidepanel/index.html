@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Memory Hub</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --text: #374151;
+    --text-secondary: #6b7280;
+    --text-heading: #111827;
+    --accent: #3b82f6;
+    --accent-light: #eff6ff;
+    --radius: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2e303a;
+      --text: #d1d5db;
+      --text-secondary: #9ca3af;
+      --text-heading: #f3f4f6;
+      --accent: #60a5fa;
+      --accent-light: #1e293b;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    padding: 12px;
+  }
+
+  .logo {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .logo span { font-size: 18px; }
+  .logo .settings-btn {
+    margin-left: auto;
+    margin-top: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo .settings-btn:hover { background: var(--border); color: var(--text); }
+
+  textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--surface);
+    color: var(--text);
+    resize: vertical;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+
+  button {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.copy {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    margin-top: 6px;
+  }
+
+  .context-output {
+    margin-top: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .context-text {
+    padding: 10px;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .key-points {
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .key-points li { margin-bottom: 4px; }
+
+  .traversal-item {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .traversal-item:last-child { border-bottom: none; }
+  .traversal-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .traversal-badge.seed { background: #dcfce7; color: #16a34a; }
+  .traversal-badge.discovered { background: #ede9fe; color: #7c3aed; }
+  .traversal-title { margin: 4px 0; color: var(--text); }
+  .traversal-path { color: var(--text-secondary); font-size: 10px; }
+
+  .status { text-align: center; padding: 20px; color: var(--text-secondary); }
+  .status.error { color: #dc2626; }
+
+  .toast {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #16a34a;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="logo">
+  <span>&#x1F9E0;</span> Personal AI OS
+  <button class="settings-btn" id="settingsBtn" title="设置">&#x2699;</button>
+</div>
+
+<textarea id="query" rows="2" placeholder="你想聊什么？输入话题，获取你的历史上下文..."></textarea>
+<button id="generateBtn">检索我的记忆</button>
+
+<div id="result" style="display:none; margin-top:10px;">
+  <div id="keypoints" class="key-points" style="display:none;"></div>
+  <button class="copy" id="copyBtn">&#x1F4CB; 复制上下文</button>
+  <div class="context-output" style="margin-top:6px;">
+    <div class="section-label">可注入上下文</div>
+    <pre class="context-text" id="contextText"></pre>
+  </div>
+  <div id="traversal" style="display:none; margin-top:8px;">
+    <div class="section-label">图谱推理路径</div>
+    <div id="traversalList"></div>
+  </div>
+</div>
+
+<div id="status" class="status">
+  输入你准备在 AI 平台讨论的话题，<br>获取跨平台图谱驱动的历史上下文。
+</div>
+
+<textarea id="hiddenCopy" style="position:absolute;left:-9999px"></textarea>
+<div class="toast" id="toast">已复制到剪贴板</div>
+
+<script src="index.js"></script>
+</body>
+</html>
