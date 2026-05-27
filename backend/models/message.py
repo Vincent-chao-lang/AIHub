@@ -89,3 +89,24 @@ class ProjectGroup(SQLModel):
     keywords: list[str]
     conversations: list[RelatedConversation]
     total_messages: int
+
+
+class GraphNode(SQLModel):
+    id: str
+    type: str  # "conversation" | "tag"
+    label: str
+    platform: str = ""
+    message_count: int = 0  # 仅 conversation 节点
+    weight: int = 0  # tag 节点的频率
+
+
+class GraphEdge(SQLModel):
+    source: str
+    target: str
+    type: str  # "tag_link" | "similar" | "vector_similar"
+    weight: float = 1.0
+
+
+class GraphData(SQLModel):
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]

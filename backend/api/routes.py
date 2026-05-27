@@ -24,6 +24,9 @@ from models.message import (
     TimelineGroup,
     RelatedConversation,
     ProjectGroup,
+    GraphNode,
+    GraphEdge,
+    GraphData,
 )
 from services.search import keyword_search
 from services import summarizer, context
@@ -510,6 +513,116 @@ def get_projects(session: Session = Depends(get_session)):
         ))
 
     return projects
+
+
+@router.get("/graph", response_model=GraphData)
+def get_graph(session: Session = Depends(get_session)):
+    """获取知识图谱数据：对话节点 + 标签节点 + 关联边。"""
+    # 获取所有有标签的对话
+    all_msgs = session.exec(
+        select(Message)
+        .where(Message.tags.isnot(None))
+        .where(Message.tags != "")
+        .order_by(Message.timestamp.desc())
+    ).all()
+
+    # 按 conversation_id 去重
+    conv_map: dict[str, Message] = {}
+    for msg in all_msgs:
+        if msg.conversation_id not in conv_map:
+            conv_map[msg.conversation_id] = msg
+
+    nodes: list[GraphNode] = []
+    edges: list[GraphEdge] = []
+    tag_counter: dict[str, int] = {}
+    conv_tags: dict[str, set[str]] = {}
+
+    # 创建节点和标签统计
+    for conv_id, msg in conv_map.items():
+        tags = {t.strip().lstrip("#").strip() for t in msg.tags.split(",") if t.strip()}
+        conv_tags[conv_id] = tags
+
+        # 对话节点
+        title = msg.title or msg.content[:40]
+        nodes.append(GraphNode(
+            id=conv_id,
+            type="conversation",
+            label=title,
+            platform=msg.platform,
+            message_count=0,  # 后续可以统计
+        ))
+
+        # 标签频率统计
+        for tag in tags:
+            tag_counter[tag] = tag_counter.get(tag, 0) + 1
+
+        # tag_link 边
+        for tag in tags:
+            edges.append(GraphEdge(
+                source=conv_id,
+                target=f"tag:{tag}",
+                type="tag_link",
+                weight=0.5,
+            ))
+
+    # 标签节点（只保留出现 >= 2 次的）
+    for tag, count in tag_counter.items():
+        if count >= 2:
+            nodes.append(GraphNode(
+                id=f"tag:{tag}",
+                type="tag",
+                label=f"#{tag}",
+                weight=count,
+            ))
+
+    # 相似边：基于标签重叠
+    conv_ids = list(conv_map.keys())
+    for i in range(len(conv_ids)):
+        for j in range(i + 1, len(conv_ids)):
+            a, b = conv_ids[i], conv_ids[j]
+            overlap = conv_tags[a] & conv_tags[b]
+            if len(overlap) >= 2:
+                weight = min(len(overlap) / 5, 1.0)
+                edges.append(GraphEdge(
+                    source=a, target=b,
+                    type="similar",
+                    weight=round(weight, 2),
+                ))
+
+    # 向量相似边：对每对对话计算 embedding 相似度（选取最近的前 N 对）
+    # 为性能考虑，仅对标签有重叠的对话对计算
+    for i in range(len(conv_ids)):
+        for j in range(i + 1, len(conv_ids)):
+            a, b = conv_ids[i], conv_ids[j]
+            overlap = conv_tags[a] & conv_tags[b]
+            if len(overlap) == 0:
+                # 无标签重叠但尝试向量相似
+                try:
+                    msg_a = conv_map[a]
+                    results = chroma_client.find_related_conversations(
+                        a, (msg_a.title or msg_a.content)[:100], exclude_conv_id=None, top_k=3
+                    )
+                    for r in results:
+                        if r["conversation_id"] == b and r["score"] > 0.5:
+                            edges.append(GraphEdge(
+                                source=a, target=b,
+                                type="vector_similar",
+                                weight=round(r["score"], 2),
+                            ))
+                            break
+                except Exception:
+                    pass
+
+    # 去重边
+    seen_edges = set()
+    unique_edges = []
+    for e in edges:
+        key = (min(e.source, e.target), max(e.source, e.target), e.type)
+        if key not in seen_edges:
+            seen_edges.add(key)
+            unique_edges.append(e)
+
+    return GraphData(nodes=nodes, edges=unique_edges)
 
 
 @router.get("/stats")

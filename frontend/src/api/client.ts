@@ -1,4 +1,4 @@
-import type { Message, TimelineGroup, SearchResult, Stats, RelatedConversation, ProjectGroup, ContextResponse } from "../types";
+import type { Message, TimelineGroup, SearchResult, Stats, RelatedConversation, ProjectGroup, ContextResponse, GraphData } from "../types";
 
 const API_BASE = "http://127.0.0.1:8712";
 
@@ -47,5 +47,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ query }),
     });
+  },
+
+  getGraph(): Promise<GraphData> {
+    return request("/graph");
   },
 };

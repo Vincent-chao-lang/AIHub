@@ -60,6 +60,27 @@ export interface ContextResponse {
   related: RelatedConversation[];
 }
 
+export interface GraphNode {
+  id: string;
+  type: "conversation" | "tag";
+  label: string;
+  platform: string;
+  message_count: number;
+  weight: number;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  type: "tag_link" | "similar" | "vector_similar";
+  weight: number;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 export const PLATFORM_LABELS: Record<string, string> = {
   chatgpt: "ChatGPT",
   claude: "Claude",

@@ -32,6 +32,12 @@ export default function Layout() {
           >
             上下文
           </button>
+          <button
+            className={`nav-tab ${isActive("/graph") ? "active" : ""}`}
+            onClick={() => navigate("/graph")}
+          >
+            图谱
+          </button>
         </nav>
         <div className="header-right">
           <span className="subtitle">智能记忆，随时回溯</span>

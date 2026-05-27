@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Conversation from "./pages/Conversation";
 import Projects from "./pages/Projects";
 import Context from "./pages/Context";
+import Graph from "./pages/Graph";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="/conversation/:conversationId" element={<Conversation />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/context" element={<Context />} />
+          <Route path="/graph" element={<Graph />} />
         </Route>
       </Routes>
     </BrowserRouter>
