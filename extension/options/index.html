@@ -109,6 +109,12 @@
 <p class="sub">配置后端 API 地址。本地模式使用 localhost，服务器模式填入你的服务器地址。</p>
 
 <div class="form-group">
+  <label for="userId">用户标识（团队模式）</label>
+  <input type="text" id="userId" placeholder="你的名字，如 zhang-san" />
+  <div class="hint">留空则匿名。同一团队的成员共享同一个后端，设置标识后可按人筛选。</div>
+</div>
+
+<div class="form-group">
   <label for="apiUrl">后端 API 地址</label>
   <input type="text" id="apiUrl" placeholder="http://127.0.0.1:8712" />
   <div class="hint">默认 http://127.0.0.1:8712（本地模式）</div>

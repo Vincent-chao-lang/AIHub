@@ -1,9 +1,9 @@
 // AI Memory Hub 设置页
 
 const DEFAULT_API_URL = "http://127.0.0.1:8712";
-const STORAGE_KEY = "apiBaseUrl";
 
 const urlInput = document.getElementById("apiUrl");
+const userIdInput = document.getElementById("userId");
 const saveBtn = document.getElementById("saveBtn");
 const toast = document.getElementById("toast");
 const statusLine = document.getElementById("statusLine");
@@ -11,15 +11,20 @@ const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 
 // 加载当前配置
-chrome.storage.local.get([STORAGE_KEY], (result) => {
-  urlInput.value = result[STORAGE_KEY] || DEFAULT_API_URL;
+chrome.storage.local.get(["apiBaseUrl", "userId"], (result) => {
+  urlInput.value = result.apiBaseUrl || DEFAULT_API_URL;
+  userIdInput.value = result.userId || "";
   checkConnection();
 });
 
 // 保存
 saveBtn.addEventListener("click", () => {
   const url = urlInput.value.trim().replace(/\/+$/, "") || DEFAULT_API_URL;
-  chrome.storage.local.set({ [STORAGE_KEY]: url }, () => {
+  const userId = userIdInput.value.trim() || "";
+  chrome.storage.local.set({
+    apiBaseUrl: url,
+    userId: userId,
+  }, () => {
     toast.classList.add("show");
     setTimeout(() => toast.classList.remove("show"), 1500);
     checkConnection();
@@ -37,8 +42,9 @@ async function checkConnection() {
     const res = await fetch(`${base}/stats`);
     if (res.ok) {
       const data = await res.json();
+      const userInfo = data.by_user ? ` | ${Object.keys(data.by_user).length} 位成员` : "";
       statusDot.className = "status-dot online";
-      statusText.textContent = `已连接 — ${data.total_messages} 条消息，${Object.keys(data.by_platform).length} 个平台`;
+      statusText.textContent = `已连接 — ${data.total_messages} 条消息，${Object.keys(data.by_platform).length} 个平台${userInfo}`;
     } else {
       throw new Error("HTTP " + res.status);
     }

@@ -7,6 +7,7 @@ class Message(SQLModel, table=True):
     __tablename__ = "messages"
 
     id: Optional[str] = Field(default=None, primary_key=True)
+    user_id: Optional[str] = Field(default=None, index=True)  # 用户标识（团队模式）
     platform: str = Field(index=True)
     conversation_id: str = Field(index=True)
     role: str  # "user" | "assistant"
@@ -19,6 +20,7 @@ class Message(SQLModel, table=True):
 
 
 class MessageCreate(SQLModel):
+    user_id: Optional[str] = None
     platform: str
     conversation_id: str
     role: str
@@ -28,6 +30,7 @@ class MessageCreate(SQLModel):
 
 class MessageResponse(SQLModel):
     id: str
+    user_id: Optional[str] = None
     platform: str
     conversation_id: str
     role: str
@@ -75,6 +78,7 @@ class RelatedConversation(SQLModel):
 
 class ContextRequest(SQLModel):
     query: str
+    max_tokens: int = 2000  # 上下文最大 Token 数
 
 
 class TraversalPath(SQLModel):
@@ -92,6 +96,7 @@ class ContextResponse(SQLModel):
     key_points: list[str]  # 关键历史发现
     related: list[RelatedConversation]
     graph_traversal: list[TraversalPath] = []  # 图谱遍历路径
+    estimated_tokens: int = 0  # 估算 Token 数
 
 
 class ProjectGroup(SQLModel):

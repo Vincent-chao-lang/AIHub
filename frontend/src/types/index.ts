@@ -68,6 +68,7 @@ export interface ContextResponse {
   key_points: string[];
   related: RelatedConversation[];
   graph_traversal: TraversalPath[];
+  estimated_tokens: number;
 }
 
 export interface GraphNode {

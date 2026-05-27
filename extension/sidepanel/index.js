@@ -12,6 +12,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const traversalDiv = document.getElementById("traversal");
   const traversalList = document.getElementById("traversalList");
   const toast = document.getElementById("toast");
+  const userBadge = document.getElementById("userBadge");
+  const tokenEstimate = document.getElementById("tokenEstimate");
+  const tokenBtns = document.querySelectorAll(".token-btn");
+
+  // 加载用户标识
+  chrome.storage.local.get(["userId"], (result) => {
+    userBadge.textContent = result.userId ? `@${result.userId}` : "";
+  });
+
+  let maxTokens = 2000;
+
+  // Token 长度选择
+  tokenBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tokenBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      maxTokens = parseInt(btn.dataset.tokens, 10);
+    });
+  });
 
   // ESC 转义
   function esc(str) {
@@ -33,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await chrome.runtime.sendMessage({
         type: "GET_CONTEXT",
         query: query,
+        maxTokens: maxTokens,
       });
 
       if (!data || data.error) {
@@ -51,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
       contextText.textContent = data.context_text;
       resultDiv.style.display = "block";
       statusEl.style.display = "none";
+      tokenEstimate.textContent = data.estimated_tokens ? `约 ${data.estimated_tokens} tokens` : "";
 
       // 关键发现
       if (data.key_points && data.key_points.length > 0) {

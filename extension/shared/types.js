@@ -26,6 +26,19 @@ function getApiBase() {
   });
 }
 
+// 从 storage 读取用户标识
+function getUserId() {
+  return new Promise((resolve) => {
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.local.get(["userId"], (result) => {
+        resolve(result.userId || null);
+      });
+    } else {
+      resolve(null);
+    }
+  });
+}
+
 // 生成消息 ID
 function generateMessageId(platform, conversationId, role, content) {
   const text = `${platform}:${conversationId}:${role}:${content}`;
@@ -38,7 +51,7 @@ function generateMessageId(platform, conversationId, role, content) {
   return `${platform}_${conversationId}_${Math.abs(hash)}`;
 }
 
-// 发送消息到 API（读取 storage 中的自定义地址）
+// 发送消息到 API（读取 storage 中的自定义地址和用户标识）
 async function sendToAPI(payload) {
   const msgId = generateMessageId(
     payload.platform,
@@ -51,6 +64,10 @@ async function sendToAPI(payload) {
 
   try {
     const apiBase = await getApiBase();
+    const userId = await getUserId();
+    if (userId) {
+      payload.user_id = userId;
+    }
     const response = await fetch(`${apiBase}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

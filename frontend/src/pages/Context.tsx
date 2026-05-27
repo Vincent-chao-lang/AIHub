@@ -10,12 +10,13 @@ export default function Context() {
   const [result, setResult] = useState<ContextResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [maxTokens, setMaxTokens] = useState(2000);
 
   const handleGenerate = async () => {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const data = await api.getContext(query.trim());
+      const data = await api.getContext(query.trim(), maxTokens);
       setResult(data);
       setCopied(false);
     } catch {
@@ -56,6 +57,25 @@ export default function Context() {
             }
           }}
         />
+        <div className="context-controls">
+          <div className="token-selector">
+            <span className="token-label">长度</span>
+            {[1000, 2000, 4000, 8000].map((n) => (
+              <button
+                key={n}
+                className={`token-btn ${maxTokens === n ? "active" : ""}`}
+                onClick={() => setMaxTokens(n)}
+              >
+                {n >= 1000 ? `${n / 1000}K` : n}
+              </button>
+            ))}
+          </div>
+          {result && (
+            <span className="token-estimate">
+              约 {result.estimated_tokens} tokens
+            </span>
+          )}
+        </div>
         <button
           className="context-generate-btn"
           onClick={handleGenerate}

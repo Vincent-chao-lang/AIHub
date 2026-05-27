@@ -1,6 +1,8 @@
+from pathlib import Path
 from sqlmodel import SQLModel, Session, create_engine
 
-DATABASE_URL = "sqlite:///./aihub.db"
+DB_PATH = Path(__file__).parent.parent / "aihub.db"
+DATABASE_URL = f"sqlite:///{DB_PATH}"
 engine = create_engine(DATABASE_URL, echo=False)
 
 

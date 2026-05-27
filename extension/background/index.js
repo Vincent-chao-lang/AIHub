@@ -42,7 +42,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       fetch(`${apiBase}/context`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: message.query }),
+        body: JSON.stringify({
+          query: message.query,
+          max_tokens: message.maxTokens || 2000,
+        }),
       })
         .then((res) => res.json())
         .then((data) => {

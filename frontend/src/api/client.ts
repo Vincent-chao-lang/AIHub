@@ -43,10 +43,10 @@ export const api = {
     return request("/projects");
   },
 
-  getContext(query: string): Promise<ContextResponse> {
+  getContext(query: string, maxTokens: number = 2000): Promise<ContextResponse> {
     return request("/context", {
       method: "POST",
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, max_tokens: maxTokens }),
     });
   },
 

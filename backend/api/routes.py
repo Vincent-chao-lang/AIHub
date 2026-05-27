@@ -92,6 +92,7 @@ def create_message(
     """接收浏览器插件上传的消息。"""
     message = Message(
         id=uuid.uuid4().hex,
+        user_id=msg.user_id,
         platform=msg.platform,
         conversation_id=msg.conversation_id,
         role=msg.role,
@@ -115,15 +116,17 @@ def create_message(
 @router.get("/timeline", response_model=list[TimelineGroup])
 def get_timeline(
     platform: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
     limit: int = Query(50, le=200),
     offset: int = Query(0),
     session: Session = Depends(get_session),
 ):
-    """获取 Timeline，按对话聚合，按日期分组。"""
-    # 获取所有消息，按时间倒序
+    """获取 Timeline，按对话聚合，按日期分组。可选按用户筛选。"""
     query = select(Message)
     if platform:
         query = query.where(Message.platform == platform)
+    if user_id:
+        query = query.where(Message.user_id == user_id)
     query = query.order_by(Message.timestamp.desc())
 
     all_msgs = session.exec(query).all()
@@ -262,7 +265,7 @@ def get_context(req: ContextRequest, session: Session = Depends(get_session)):
 
     if not seed_convs:
         return ContextResponse(
-            query=req.query, context_text="", key_points=[], related=[], graph_traversal=[]
+            query=req.query, context_text="", key_points=[], related=[], graph_traversal=[], estimated_tokens=0
         )
 
     # 步骤2: 构建图谱边（same logic as /graph endpoint）
@@ -301,12 +304,13 @@ def get_context(req: ContextRequest, session: Session = Depends(get_session)):
                 })
 
     # 步骤3: 图谱遍历 + 生成上下文
-    context_text, key_points, traversal_paths = context.build_context_with_graph(
+    context_text, key_points, traversal_paths, estimated_tokens = context.build_context_with_graph(
         query=req.query,
         seed_convs=seed_convs,
         conv_meta=conv_meta_map,
         edges=graph_edges,
         max_hops=2,
+        max_tokens=req.max_tokens,
         top_n=8,
     )
 
@@ -349,6 +353,7 @@ def get_context(req: ContextRequest, session: Session = Depends(get_session)):
             )
             for tp in traversal_paths
         ],
+        estimated_tokens=estimated_tokens,
     )
 
 
@@ -686,8 +691,14 @@ def get_stats(session: Session = Depends(get_session)):
     platforms = session.exec(
         select(Message.platform, func.count(Message.id)).group_by(Message.platform)
     ).all()
+    users = session.exec(
+        select(Message.user_id, func.count(Message.id))
+        .where(Message.user_id.isnot(None))
+        .group_by(Message.user_id)
+    ).all()
     return {
         "total_messages": total,
         "by_platform": {p: c for p, c in platforms},
+        "by_user": {u or "未标记": c for u, c in users},
         "vector_index_count": chroma_client.get_count(),
     }

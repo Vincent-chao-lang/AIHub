@@ -2,40 +2,69 @@
 上下文生成服务。
 
 图谱驱动模式：向量搜索找到种子对话 → 图谱遍历发现关联链 → 输出带推理路径的上下文。
+智能截断：按优先级（直接匹配 > 图谱发现）控制 Token 数量，适配 LLM 上下文窗口。
 """
 
+import re
 from collections import deque
+
+
+def estimate_tokens(text: str) -> int:
+    """估算文本的 Token 数量。
+
+    中文约 1.5 token/字，英文约 0.3 token/字符，混合取加权平均。
+    """
+    if not text:
+        return 0
+    chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', text))
+    other_chars = len(text) - chinese_chars
+    # 中文 ~1.5 token/字，非中文 ~0.25 token/字符
+    return int(chinese_chars * 1.5 + other_chars * 0.25)
+
+
+def _trim_summary(summary: str, max_len: int) -> str:
+    """截断摘要到指定长度，保留完整句子。"""
+    if len(summary) <= max_len:
+        return summary
+    truncated = summary[:max_len]
+    # 回退到最后一个句号/换行处
+    last_break = max(truncated.rfind("。"), truncated.rfind("\n"), truncated.rfind("."))
+    if last_break > max_len * 0.5:
+        return truncated[:last_break + 1] + "..."
+    return truncated + "..."
 
 
 def build_context_with_graph(
     query: str,
-    seed_convs: list[dict],       # 向量搜索直接命中的对话
-    conv_meta: dict[str, dict],   # conversation_id → {title, platform, summary, tags, date}
-    edges: list[dict],            # [{source, target, type, weight}, ...]
+    seed_convs: list[dict],
+    conv_meta: dict[str, dict],
+    edges: list[dict],
     max_hops: int = 2,
     decay: float = 0.6,
+    max_tokens: int = 2000,
     top_n: int = 8,
-) -> tuple[str, list[str], list[dict]]:
+) -> tuple[str, list[str], list[dict], int]:
     """
     图谱驱动的上下文生成。
 
     Args:
         query: 用户当前讨论的主题
-        seed_convs: 向量搜索直接命中的对话 [{conversation_id, score}, ...]
+        seed_convs: 向量搜索直接命中的对话
         conv_meta: 所有对话的元信息
-        edges: 图谱中的边（similar + vector_similar）
-        max_hops: 图谱遍历最大跳数
+        edges: 图谱中的边
+        max_hops: 最大遍历跳数
         decay: 距离衰减因子
+        max_tokens: 上下文最大 Token 数（超出部分智能截断）
         top_n: 最终返回的对话数量上限
 
     Returns:
-        (context_text, key_points, traversal_paths)
+        (context_text, key_points, traversal_paths, estimated_tokens)
     """
     if not seed_convs:
-        return "", [], []
+        return "", [], [], 0
 
-    # 构建邻接表
-    adjacency: dict[str, list[tuple[str, str, float]]] = {}  # node → [(neighbor, edge_type, weight)]
+    # ── 构建邻接表 ──
+    adjacency: dict[str, list[tuple[str, str, float]]] = {}
     for e in edges:
         if e["type"] not in ("similar", "vector_similar"):
             continue
@@ -43,10 +72,8 @@ def build_context_with_graph(
         adjacency.setdefault(s, []).append((t, e["type"], w))
         adjacency.setdefault(t, []).append((s, e["type"], w))
 
-    # BFS 图谱遍历
-    discovered: dict[str, dict] = {}  # conv_id → {score, distance, path}
-
-    # 初始化种子
+    # ── BFS 图谱遍历 ──
+    discovered: dict[str, dict] = {}
     for seed in seed_convs:
         cid = seed["conversation_id"]
         discovered[cid] = {
@@ -56,14 +83,10 @@ def build_context_with_graph(
         }
 
     queue = deque([(cid, 0) for cid in discovered])
-
     while queue:
         current, dist = queue.popleft()
-        if dist >= max_hops:
+        if dist >= max_hops or current not in adjacency:
             continue
-        if current not in adjacency:
-            continue
-
         current_score = discovered[current]["score"]
         for neighbor, edge_type, edge_weight in adjacency[current]:
             if neighbor in discovered:
@@ -74,25 +97,46 @@ def build_context_with_graph(
                 "score": round(new_score, 4),
                 "distance": new_dist,
                 "path": discovered[current]["path"] + [
-                    f"←{'标签' if edge_type == 'similar' else '语义'}关联→ {conv_meta.get(neighbor, {}).get('title', neighbor)[:30]}"
+                    f"←{'标签' if edge_type == 'similar' else '语义'}关联→ "
+                    f"{conv_meta.get(neighbor, {}).get('title', neighbor)[:30]}"
                 ],
             }
             queue.append((neighbor, new_dist))
 
-    # 按得分排序
-    ranked = sorted(discovered.items(), key=lambda x: -x[1]["score"])[:top_n]
+    # ── 排序、分优先级 ──
+    ranked = sorted(discovered.items(), key=lambda x: (-(x[1]["distance"] == 0), -x[1]["score"]))
 
-    # 收集片段
+    # ── Token 预算分配 ──
+    # 固定开销：标题行 + 结尾提示 ≈ 100 tokens
+    overhead = estimate_tokens(f"[当前讨论: {query}]\n请基于以上历史讨论的上下文来回答。")
+    budget = max_tokens - overhead - 50  # 预留 50 margin
+
     conv_snippets = []
     traversal_paths = []
     key_points = []
+    remaining_budget = budget
 
     for cid, info in ranked:
+        if len(conv_snippets) >= top_n:
+            break
         meta = conv_meta.get(cid, {})
         if not meta:
             continue
 
-        summary = meta.get("summary", "")[:300]
+        # 分配这个对话的预算
+        is_direct = info["distance"] == 0
+        base_budget = 400 if is_direct else 250  # 直接匹配多一些空间
+        conv_budget = min(base_budget, remaining_budget)
+        if conv_budget < 60:  # 不够放标题了，跳过
+            break
+
+        summary = meta.get("summary", "") or ""
+        # 根据预算截断摘要
+        header = f"[{meta.get('platform', '')}] {meta.get('title', '')} "
+        header_tokens = estimate_tokens(header)
+        summary_budget = max(conv_budget - header_tokens - 30, 20)
+        summary = _trim_summary(summary, int(summary_budget * 1.5))  # 字符数 ≈ token * 1.5
+
         conv_snippets.append({
             "platform": meta.get("platform", ""),
             "title": meta.get("title", cid[:40]),
@@ -112,20 +156,25 @@ def build_context_with_graph(
             "path": info["path"],
         })
 
-        # 提取关键点（从直接匹配的对话中）
-        if info["distance"] == 0 and summary:
+        # 消耗预算
+        snippet_text = header + summary
+        remaining_budget -= estimate_tokens(snippet_text)
+
+        # 关键点
+        if is_direct and summary:
             first_line = summary.split("\n")[0].strip()
             if 10 < len(first_line) < 200:
                 key_points.append(first_line)
 
+    # ── 生成上下文 ──
     context_text = _format_graph_context(query, conv_snippets)
-    key_points = key_points[:5]
+    estimated = estimate_tokens(context_text)
 
-    return context_text, key_points, traversal_paths
+    return context_text, key_points[:5], traversal_paths, estimated
 
 
 def _format_graph_context(query: str, snippets: list[dict]) -> str:
-    """格式化图谱驱动的上下文段落，区分直接匹配和图谱发现。"""
+    """格式化上下文段落。"""
     if not snippets:
         return ""
 
@@ -134,32 +183,24 @@ def _format_graph_context(query: str, snippets: list[dict]) -> str:
 
     lines = []
 
-    # 直接匹配
     if direct:
         lines.append("[直接相关的历史讨论]\n")
         for i, s in enumerate(direct, 1):
             lines.append(f"{i}. [{s['platform'].upper()}] {s['title']} ({s['date']})")
             lines.append(f"   相关性: {s['score']:.0%}")
-            summary = s["summary"]
-            if len(summary) > 250:
-                summary = summary[:250] + "..."
-            lines.append(f"   {summary}")
+            lines.append(f"   {s['summary']}")
             if s["tags"]:
                 tags = s["tags"].replace("#", "").replace(",", "、")
                 lines.append(f"   关键词: {tags}")
             lines.append("")
 
-    # 图谱发现的关联
     if discovered:
         lines.append("[图谱发现的关联讨论]\n")
         lines.append("以下对话通过知识图谱的标签和语义关联被自动发现：\n")
         for i, s in enumerate(discovered, 1):
             lines.append(f"{i}. [{s['platform'].upper()}] {s['title']} ({s['date']})")
             lines.append(f"   关联强度: {s['score']:.0%} (图谱 {s['distance']} 跳)")
-            summary = s["summary"]
-            if len(summary) > 250:
-                summary = summary[:250] + "..."
-            lines.append(f"   {summary}")
+            lines.append(f"   {s['summary']}")
             if s["tags"]:
                 tags = s["tags"].replace("#", "").replace(",", "、")
                 lines.append(f"   关键词: {tags}")
