@@ -23,7 +23,7 @@ cd backend && pip install -r requirements.txt && python main.py
 在任意 AI 平台页面（ChatGPT/Claude/DeepSeek...）
   → 点击浏览器工具栏 🧠
   → 输入你要讨论的话题
-  → 选择长度档位（1K/2K/4K/8K）
+  → 选择长度档位（1K/2K/4K/8K/16K/32K/64K/128K）
   → 点击「检索我的记忆」
   → 系统搜索历史 + 图谱发现关联 → 生成上下文
   → 点击「复制上下文」
@@ -38,6 +38,10 @@ cd backend && pip install -r requirements.txt && python main.py
 | 2K | 日常讨论（默认） |
 | 4K | 深度研究，需要完整背景 |
 | 8K | 长上下文模型（Claude/Gemini） |
+| 16K | GPT-4 Turbo / DeepSeek-V3 等中长上下文模型 |
+| 32K | GPT-4-32K / Kimi 等中等上下文模型 |
+| 64K | Gemini 1.5 Flash 等中大型上下文模型 |
+| 128K | GPT-4 128K / Claude 200K / Gemini 1.5 Pro 等超长上下文模型 |
 
 当前上下文估算 Token 数会实时显示。
 

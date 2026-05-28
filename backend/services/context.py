@@ -5,21 +5,18 @@
 智能截断：按优先级（直接匹配 > 图谱发现）控制 Token 数量，适配 LLM 上下文窗口。
 """
 
-import re
 from collections import deque
+
+import tiktoken
+
+_ENCODING = tiktoken.get_encoding("cl100k_base")
 
 
 def estimate_tokens(text: str) -> int:
-    """估算文本的 Token 数量。
-
-    中文约 1.5 token/字，英文约 0.3 token/字符，混合取加权平均。
-    """
+    """使用 tiktoken cl100k_base 编码估算 Token 数量。"""
     if not text:
         return 0
-    chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', text))
-    other_chars = len(text) - chinese_chars
-    # 中文 ~1.5 token/字，非中文 ~0.25 token/字符
-    return int(chinese_chars * 1.5 + other_chars * 0.25)
+    return len(_ENCODING.encode(text))
 
 
 def _trim_summary(summary: str, max_len: int) -> str:

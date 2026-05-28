@@ -60,7 +60,7 @@ export default function Context() {
         <div className="context-controls">
           <div className="token-selector">
             <span className="token-label">长度</span>
-            {[1000, 2000, 4000, 8000].map((n) => (
+            {[1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000].map((n) => (
               <button
                 key={n}
                 className={`token-btn ${maxTokens === n ? "active" : ""}`}

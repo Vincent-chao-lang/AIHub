@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Memory Hub Enterprise — 企业 AI 知识资产平台</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --text: #c8c8d4;
+    --text-dim: #7a7a8c;
+    --text-bright: #f0f0f5;
+    --accent: #6366f1;
+    --accent2: #8b5cf6;
+    --accent-glow: rgba(99, 102, 241, 0.3);
+    --green: #22c55e;
+    --green-glow: rgba(34, 197, 94, 0.3);
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid Background ── */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Glow Orbs ── */
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.15;
+  }
+  .glow-orb.top   { width: 600px; height: 600px; background: var(--accent);  top: -200px; right: -200px; }
+  .glow-orb.mid   { width: 400px; height: 400px; background: var(--accent2); top: 50%; left: -100px; }
+  .glow-orb.bottom{ width: 500px; height: 500px; background: var(--accent);  bottom: -200px; right: 10%; }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  section { padding: 100px 0; position: relative; z-index: 1; }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 0;
+    transition: background .3s, backdrop-filter .3s;
+  }
+  nav.scrolled { background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+  nav .container { display: flex; align-items: center; justify-content: space-between; }
+  .nav-logo { font-size: 18px; font-weight: 700; color: var(--text-bright); display: flex; align-items: center; gap: 8px; }
+  .nav-logo .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  .nav-links { display: flex; gap: 32px; list-style: none; }
+  .nav-links a { color: var(--text-dim); text-decoration: none; font-size: 14px; transition: color .2s; }
+  .nav-links a:hover { color: var(--text-bright); }
+  .nav-cta {
+    padding: 8px 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: box-shadow .3s;
+  }
+  .nav-cta:hover { box-shadow: 0 0 24px var(--accent-glow); }
+
+  /* ── Hero ── */
+  #hero { padding-top: 180px; padding-bottom: 120px; text-align: center; }
+  .hero-badge {
+    display: inline-block;
+    padding: 4px 16px;
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+  }
+  .hero-title {
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 800;
+    color: var(--text-bright);
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+  .hero-title .gradient {
+    background: linear-gradient(135deg, var(--accent), var(--accent2), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 0 auto 40px;
+  }
+  .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    padding: 14px 36px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .3s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-primary:hover { box-shadow: 0 0 32px var(--accent-glow); transform: translateY(-2px); }
+  .btn-outline {
+    padding: 14px 36px;
+    background: transparent;
+    color: var(--text-bright);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .3s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Stats Bar ── */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin-top: 80px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .stat-item { text-align: center; }
+  .stat-num { font-size: 36px; font-weight: 800; color: var(--text-bright); }
+  .stat-label { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+
+  /* ── Section Headers ── */
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 16px;
+    line-height: 1.3;
+  }
+  .section-desc {
+    font-size: 16px;
+    color: var(--text-dim);
+    max-width: 1100px;
+    margin-bottom: 48px;
+  }
+
+  /* ── Problem Cards ── */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .problem-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    transition: border-color .3s;
+  }
+  .problem-card:hover { border-color: var(--accent); }
+  .problem-icon { font-size: 32px; margin-bottom: 16px; }
+  .problem-card h3 { font-size: 18px; color: var(--text-bright); margin-bottom: 8px; }
+  .problem-card p { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
+
+  /* ── Solution Flow ── */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    text-align: center;
+    flex: 1;
+    min-width: 200px;
+    max-width: 260px;
+    position: relative;
+  }
+  .flow-arrow {
+    font-size: 24px;
+    color: var(--accent);
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+  .flow-step .step-num {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .flow-step h4 { font-size: 15px; color: var(--text-bright); margin-bottom: 6px; }
+  .flow-step p  { font-size: 13px; color: var(--text-dim); }
+
+  /* ── Scenario Cards ── */
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+  .scenario-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .scenario-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .scenario-card:nth-child(1)::before { background: var(--accent); }
+  .scenario-card:nth-child(2)::before { background: var(--amber); }
+  .scenario-card:nth-child(3)::before { background: var(--green); }
+  .scenario-card:nth-child(4)::before { background: var(--accent2); }
+
+  .scenario-card h3 { font-size: 17px; color: var(--text-bright); margin-bottom: 8px; }
+  .scenario-card .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .tag.before { background: rgba(239,68,68,.15); color: var(--red); }
+  .tag.after  { background: rgba(34,197,94,.15); color: var(--green); }
+  .scenario-card p { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+
+  /* ── Architecture ── */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 48px;
+    text-align: center;
+  }
+  .arch-layer {
+    padding: 16px 24px;
+    border-radius: var(--radius-sm);
+    margin: 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .arch-top    { background: rgba(99,102,241,.1); color: #a5b4fc; border: 1px solid rgba(99,102,241,.3); }
+  .arch-middle  { background: rgba(139,92,246,.1); color: #c4b5fd; border: 1px solid rgba(139,92,246,.3); }
+  .arch-bottom  { background: rgba(34,197,94,.1);  color: #86efac; border: 1px solid rgba(34,197,94,.3); }
+  .arch-arrow-down { color: var(--text-dim); font-size: 20px; margin: 4px 0; }
+
+  .arch-platforms {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .arch-platform {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* ── Feature Table ── */
+  .feature-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+  .feature-table th {
+    text-align: left;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0 16px 8px;
+    font-weight: 600;
+  }
+  .feature-table td {
+    padding: 16px;
+    font-size: 14px;
+    background: var(--surface);
+  }
+  .feature-table tr td:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); font-weight: 600; color: var(--text-bright); }
+  .feature-table tr td:last-child  { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--text-dim); }
+  .feature-table .check { color: var(--green); margin-right: 6px; }
+
+  /* ── Comparison ── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .compare-col {
+    padding: 32px;
+    border-radius: var(--radius);
+  }
+  .compare-col.old {
+    background: rgba(239,68,68,.05);
+    border: 1px solid rgba(239,68,68,.2);
+  }
+  .compare-col.new {
+    background: rgba(34,197,94,.05);
+    border: 1px solid rgba(34,197,94,.2);
+  }
+  .compare-col h3 { font-size: 18px; margin-bottom: 16px; }
+  .compare-col.old h3 { color: var(--red); }
+  .compare-col.new h3 { color: var(--green); }
+  .compare-col li {
+    font-size: 14px;
+    padding: 6px 0;
+    list-style: none;
+    color: var(--text-dim);
+  }
+  .compare-col li::before { margin-right: 8px; }
+  .compare-col.old li::before { content: "✗"; color: var(--red); }
+  .compare-col.new li::before { content: "✓"; color: var(--green); }
+
+  /* ── ROI ── */
+  .roi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+  }
+  .roi-phases {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
+  }
+  .roi-phase {
+    text-align: center;
+    padding: 24px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+  }
+  .roi-phase .month {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .roi-phase .metric {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-bright);
+  }
+  .roi-phase .desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ── CTA ── */
+  #cta { text-align: center; padding: 120px 0; }
+  #cta .section-title { margin-bottom: 24px; }
+  #cta .section-desc { margin: 0 auto 40px; }
+  .cta-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 14px;
+    color: var(--green);
+    margin-top: 24px;
+  }
+  .cta-box .prompt { color: var(--text-dim); margin-right: 4px; }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Animations ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity .8s ease, transform .8s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    section { padding: 60px 0; }
+    #hero { padding-top: 120px; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .stats-bar { gap: 32px; }
+    .flow-arrow { transform: rotate(90deg); }
+    .flow-row { flex-direction: column; }
+    .arch-diagram { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-orb top"></div>
+<div class="glow-orb mid"></div>
+<div class="glow-orb bottom"></div>
+
+<!-- ── Nav ── -->
+<nav id="nav">
+  <div class="container">
+    <div class="nav-logo"><span class="dot"></span>AI Memory Hub</div>
+    <ul class="nav-links">
+      <li><a href="#problem">痛点</a></li>
+      <li><a href="#solution">方案</a></li>
+      <li><a href="#features">功能</a></li>
+      <li><a href="#deploy">部署</a></li>
+      <li><a href="#roi">ROI</a></li>
+    </ul>
+    <a href="#cta" class="nav-cta">预约演示</a>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-badge reveal">ENTERPRISE KNOWLEDGE PLATFORM</div>
+    <h1 class="hero-title reveal">
+      员工每天都在和 AI 对话<br>
+      这些对话，是企业的<span class="gradient">隐形资产</span>
+    </h1>
+    <p class="hero-sub reveal">
+      自动采集、智能关联、一键复用——将每一次 AI 对话沉淀为可检索、可关联、可继承的企业知识资产。人走，知识留下，价值继续。
+    </p>
+    <div class="hero-btns reveal">
+      <a href="#solution" class="btn-primary">了解解决方案</a>
+      <a href="#cta" class="btn-outline">预约产品演示</a>
+    </div>
+    <div class="stats-bar reveal">
+      <div class="stat-item">
+        <div class="stat-num">66,000<span style="font-size:18px;color:var(--accent)">+</span></div>
+        <div class="stat-label">50人团队年知识碎片产出</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">95<span style="font-size:18px;color:var(--green)">%</span></div>
+        <div class="stat-label">知识留存率（传统方式 &lt;10%）</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">2<span style="font-size:18px;color:var(--accent2)">x</span></div>
+        <div class="stat-label">新人上手速度提升</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Problem ── -->
+<section id="problem">
+  <div class="container">
+    <div class="section-label reveal">为什么需要</div>
+    <h2 class="section-title reveal">AI 时代的知识管理，旧工具解决不了新问题</h2>
+    <p class="section-desc reveal">
+      你的员工每天和 ChatGPT、Claude、DeepSeek 进行高质量对话——架构决策、故障排查、方案对比。但这些认知成果散落在个人账户中，随着人员流动而永久丢失。
+    </p>
+    <div class="problem-grid">
+      <div class="problem-card reveal">
+        <div class="problem-icon">&#x1F4A8;</div>
+        <h3>知识蒸发</h3>
+        <p>张三花 3 天和 AI 解决了一个部署难题。离职后，这段推演过程彻底消失。李四入职遇到同样的故障，从零再来一遍。</p>
+      </div>
+      <div class="problem-card reveal">
+        <div class="problem-icon">&#x1F50D;</div>
+        <h3>检索无门</h3>
+        <p>记得团队有人和 AI 聊过微服务拆分，但在哪个平台？谁的账号？什么时候？——只能用最原始的方式：在群里问。</p>
+      </div>
+      <div class="problem-card reveal">
+        <div class="problem-icon">&#x1F517;</div>
+        <h3>关联断裂</h3>
+        <p>研发聊架构、运维聊部署、产品聊需求——同一个项目的知识散落在不同平台、不同人的对话里，无法拼成完整图景。</p>
+      </div>
+      <div class="problem-card reveal">
+        <div class="problem-icon">&#x26A0;&#xFE0F;</div>
+        <h3>合规盲区</h3>
+        <p>员工把内部代码贴给 ChatGPT？讨论内容涉及敏感信息？——AI 使用完全黑盒，出了事才发现。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Solution ── -->
+<section id="solution">
+  <div class="container">
+    <div class="section-label reveal">解决方案</div>
+    <h2 class="section-title reveal">员工只需正常工作，知识自动沉淀</h2>
+    <p class="section-desc reveal">
+    </p>
+
+    <div class="flow-row reveal">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <h4>自动采集</h4>
+        <p>员工正常使用 AI，对话实时同步至企业知识中枢，零手动操作</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <h4>智能理解</h4>
+        <p>自动摘要、标签、向量化，知识图谱自动发现跨对话关联</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <h4>随时复用</h4>
+        <p>自然语言搜索，一键注入任意 AI 平台，带着团队知识提问</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Scenarios ── -->
+<section id="scenarios">
+  <div class="container">
+    <div class="section-label reveal">关键场景</div>
+    <h2 class="section-title reveal">四个场景，四种价值</h2>
+    <div class="scenario-grid">
+      <div class="scenario-card reveal">
+        <h3>&#x1F31F; 新人入职</h3>
+        <p class="tag before">之前：花 2-4 周自己摸索</p>
+        <p class="tag after">现在：搜索关键词，看到前辈完整 AI 决策链，上手速度 2x 提升</p>
+      </div>
+      <div class="scenario-card reveal">
+        <h3>&#x1F4BC; 员工离职</h3>
+        <p class="tag before">之前：交接文档只有结论，丢失 90% 思考过程</p>
+        <p class="tag after">现在：对话自动归档，知识留存率 10% → 95%，真正的"人走知识留"</p>
+      </div>
+      <div class="scenario-card reveal">
+        <h3>&#x1F310; 跨部门协作</h3>
+        <p class="tag before">之前：研发和运维各自与 AI 探索，互不知晓</p>
+        <p class="tag after">现在：知识图谱跨部门缝合，打破信息孤岛</p>
+      </div>
+      <div class="scenario-card reveal">
+        <h3>&#x1F512; AI 合规审计</h3>
+        <p class="tag before">之前：员工和 AI 聊了什么完全黑盒</p>
+        <p class="tag after">现在：完整审计追踪，敏感关键词自动告警</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Architecture ── -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-label reveal">产品架构</div>
+    <h2 class="section-title reveal">一层轻量代理，一个知识中枢</h2>
+    <p class="section-desc reveal">不改动现有系统，不要求员工切换平台。零摩擦接入。</p>
+
+    <div class="arch-diagram reveal">
+      <div class="arch-platforms">
+        <span class="arch-platform">ChatGPT</span>
+        <span class="arch-platform">Claude</span>
+        <span class="arch-platform">DeepSeek</span>
+        <span class="arch-platform">Kimi</span>
+        <span class="arch-platform">Gemini</span>
+         <span class="arch-platform">...</span>
+      </div>
+      <div class="arch-arrow-down">&#x2193;</div>
+      <div class="arch-top">自动处理 · 静默采集 · 流式去重 · 用户标记</div>
+      <div class="arch-arrow-down">&#x2193;</div>
+      <div class="arch-middle">
+        企业知识中枢（本地 / 私有云部署）<br>
+        <span style="font-size:12px;font-weight:400;opacity:0.8;">
+          语义搜索 · 自动摘要 · 知识图谱 · 上下文生成 · 合规审计
+        </span>
+      </div>
+      <div class="arch-arrow-down">&#x2193;</div>
+      <div class="arch-bottom">PostgreSQL + ChromaDB · 全量数据归属企业</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="container">
+    <div class="section-label reveal">功能矩阵</div>
+    <h2 class="section-title reveal">从采集到复用，完整闭环</h2>
+    <div style="overflow-x:auto;">
+      <table class="feature-table reveal">
+        <thead>
+          <tr><th>模块</th><th>功能</th><th>企业价值</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>智能采集</td>
+            <td><span class="check">&#x2713;</span>覆盖主流平台 · 流式捕获 · 用户标识</td>
+            <td>零门槛接入，不改变工作习惯</td>
+          </tr>
+          <tr>
+            <td>语义检索</td>
+            <td><span class="check">&#x2713;</span>向量 + 关键词混合搜索 · 跨平台 · 跨时间</td>
+            <td>找知识不需要知道在哪个平台</td>
+          </tr>
+          <tr>
+            <td>自动摘要</td>
+            <td><span class="check">&#x2713;</span>标题 · 标签 · 摘要全自动本地生成</td>
+            <td>海量对话自动结构化</td>
+          </tr>
+          <tr>
+            <td>知识图谱</td>
+            <td><span class="check">&#x2713;</span>标签重叠 + 语义相似双通道 · 力导向图可视化</td>
+            <td>隐性关联自动浮现</td>
+          </tr>
+          <tr>
+            <td>上下文注入</td>
+            <td><span class="check">&#x2713;</span>图谱驱动 BFS 遍历 · 8 档 Token 控制 (1K-128K)</td>
+            <td>让 AI 基于团队知识回答</td>
+          </tr>
+          <tr>
+            <td>团队看板</td>
+            <td><span class="check">&#x2713;</span>按人/时间/平台/主题多维度 · Web 可视面板</td>
+            <td>团队知识全貌一目了然</td>
+          </tr>
+          <tr>
+            <td>审计追踪</td>
+            <td><span class="check">&#x2713;</span>完整对话记录 · 敏感关键词告警</td>
+            <td>AI 使用合规透明</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ── Comparison ── -->
+<section id="comparison">
+  <div class="container">
+    <div class="section-label reveal">为什么不是传统方案</div>
+    <h2 class="section-title reveal">知识管理的核心矛盾：成本在个人，收益在组织</h2>
+    <p class="section-desc reveal">Wiki、Confluence、共享文档——所有传统方案都要求员工"额外付出"。我们把这个成本降为零。</p>
+    <div class="compare-grid reveal">
+      <div class="compare-col old">
+        <h3>传统知识管理</h3>
+        <ul>
+          <li>员工不爱写，写了也不更新</li>
+          <li>文档散落各处，格式不统一</li>
+          <li>只有结论，没有思考过程</li>
+          <li>离职突击写，质量难保证</li>
+          <li>搜索如大海捞针</li>
+        </ul>
+      </div>
+      <div class="compare-col new">
+        <h3>AI Memory Hub</h3>
+        <ul>
+          <li>边聊边记录，知识管理成本 → 零</li>
+          <li>自动摘要 + 标签，全局一致</li>
+          <li>完整保留 AI 决策推演链</li>
+          <li>日常自动归档，离职无缝交接</li>
+          <li>语义搜索，用问题找答案</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Deploy ── -->
+<section id="deploy">
+  <div class="container">
+    <div class="section-label reveal">部署方案</div>
+    <h2 class="section-title reveal">数据 100% 归你，我们只提供能力</h2>
+    <div class="problem-grid">
+      <div class="problem-card reveal">
+        <div class="problem-icon">&#x1F3E0;</div>
+        <h3>私有化部署（推荐）</h3>
+        <p>部署在企业内网或 VPC，数据不出企业网络。 一键部署，运维成本极低。</p>
+      </div>
+      <div class="problem-card reveal">
+        <div class="problem-icon">&#x1F510;</div>
+        <h3>安全合规</h3>
+        <p>全量数据归属企业，支持随时导出。强制 HTTPS/TLS 传输加密。完整审计日志，支持 GDPR / 个保法合规要求。</p>
+      </div>
+      <div class="problem-card reveal">
+        <div class="problem-icon">&#x26A1;</div>
+        <h3>轻量无侵入</h3>
+        <p>一个浏览器扩展 + 一个后端服务。不改造现有系统，不要求切换 AI 平台，不强制改变任何工作习惯。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ROI ── -->
+<section id="roi">
+  <div class="container">
+    <div class="section-label reveal">投资回报</div>
+    <h2 class="section-title reveal">ROI 不是成本削减，是知识复利</h2>
+    <p class="section-desc reveal">以 50 人技术团队为例，年离职率 15%。</p>
+    <div class="roi-card reveal">
+      <div class="roi-phases">
+        <div class="roi-phase">
+          <div class="month">3 个月内</div>
+          <div class="metric">30%<span style="font-size:14px;color:var(--green)">+</span></div>
+          <div class="desc">减少重复问题讨论</div>
+        </div>
+        <div class="roi-phase">
+          <div class="month">6 个月内</div>
+          <div class="metric">2<span style="font-size:14px;color:var(--accent2)">x</span></div>
+          <div class="desc">新人上手速度提升</div>
+        </div>
+        <div class="roi-phase">
+          <div class="month">12 个月后</div>
+          <div class="metric">95<span style="font-size:14px;color:var(--green)">%</span></div>
+          <div class="desc">知识留存率达到</div>
+        </div>
+        <div class="roi-phase">
+          <div class="month">持续增长</div>
+          <div class="metric">&#x221E;</div>
+          <div class="desc">知识资产持续增值，正反馈循环</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section id="cta">
+  <div class="container">
+    <h2 class="section-title reveal">让你的企业知识，不再随人走</h2>
+    <p class="section-desc reveal">
+      每一个员工和 AI 的对话，都不是一次性的消耗品。它是企业的知识资产。<br>
+      把它留下，沉淀，复用。
+    </p>
+    
+    <div class="cta-box reveal" style="border: none !important;">
+     <a href="mailto:2819699195@qq.com" class="btn-primary reveal" style="font-size:18px;padding:16px 48px;">预约产品演示</a>
+      <!-- <span class="prompt">$</span> git clone &amp;&amp; ./start.sh &nbsp;&#x27A4;&nbsp; 后端就绪 · 前端就绪 · 扩展就绪 -->
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    AI Memory Hub Enterprise &nbsp;·&nbsp; 企业 AI 知识资产平台 &nbsp;·&nbsp; 数据 100% 归你
+  </div>
+</footer>
+
+<script>
+  // Nav scroll effect
+  const nav = document.getElementById("nav");
+  window.addEventListener("scroll", () => {
+    nav.classList.toggle("scrolled", window.scrollY > 50);
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+
+  // Trigger on load
+  setTimeout(() => {
+    document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+  }, 100);
+</script>
+
+</body>
+</html>
