@@ -9,7 +9,7 @@ from fastapi.concurrency import run_in_threadpool
 from sqlmodel import Session, select, func
 
 from db.database import get_session
-from db import chroma_client
+from services.vector_store import get_vector_store
 from collections import defaultdict
 
 from models.message import (
@@ -37,9 +37,10 @@ router = APIRouter()
 
 
 def _embed_and_index(message: Message):
-    """后台任务：生成 embedding 并存入 ChromaDB。"""
+    """后台任务：生成 embedding 并存入向量索引。"""
     try:
-        chroma_client.add_message(
+        store = get_vector_store()
+        store.add(
             msg_id=message.id,
             content=message.content,
             metadata={
@@ -217,7 +218,7 @@ def get_conversation(conversation_id: str, session: Session = Depends(get_sessio
 def search_messages(req: SearchRequest, session: Session = Depends(get_session)):
     """语义搜索：优先使用 ChromaDB 向量搜索，回退到关键词匹配。"""
     # 优先使用向量搜索
-    vector_results = chroma_client.search_similar(req.query, top_k=20)
+    vector_results = get_vector_store().search(req.query, top_k=20)
 
     if vector_results:
         results = []
@@ -245,7 +246,7 @@ def search_messages(req: SearchRequest, session: Session = Depends(get_session))
 def get_context(req: ContextRequest, session: Session = Depends(get_session)):
     """图谱驱动的上下文注入：向量搜索定位种子 → 图谱遍历发现关联链 → 生成带推理路径的上下文。"""
     # 步骤1: 向量检索 → 种子对话
-    vector_results = chroma_client.search_similar(req.query, top_k=30)
+    vector_results = get_vector_store().search(req.query, top_k=30)
 
     seed_convs: list[dict] = []
     related_messages: list[Message] = []
@@ -412,7 +413,7 @@ def get_related_conversations(
     query_text = " ".join(m.content for m in user_msgs) if user_msgs else messages[0].content
 
     # 从 ChromaDB 查找相关对话
-    related = chroma_client.find_related_conversations(
+    related = get_vector_store().find_related(
         conversation_id=conversation_id,
         query_text=query_text,
         top_k=top_k,
@@ -658,7 +659,7 @@ def get_graph(session: Session = Depends(get_session)):
                 # 无标签重叠但尝试向量相似
                 try:
                     msg_a = conv_map[a]
-                    results = chroma_client.find_related_conversations(
+                    results = get_vector_store().find_related(
                         a, (msg_a.title or msg_a.content)[:100], exclude_conv_id=None, top_k=3
                     )
                     for r in results:
@@ -700,5 +701,5 @@ def get_stats(session: Session = Depends(get_session)):
         "total_messages": total,
         "by_platform": {p: c for p, c in platforms},
         "by_user": {u or "未标记": c for u, c in users},
-        "vector_index_count": chroma_client.get_count(),
+        "vector_index_count": get_vector_store().count(),
     }

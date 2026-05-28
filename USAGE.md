@@ -255,7 +255,8 @@ cd backend && python main.py
 
 **注意**：
 - 切换数据库后，SQLite 中的旧数据不会自动迁移。需要导出再导入（或从零开始）
-- ChromaDB 仍然使用本地持久化目录，不受数据库切换影响
+- 配合 PostgreSQL 时，建议同步切换向量存储为 pgvector（`VECTOR_STORE=pgvector`）
+- 详细升级路径见 `STORAGE.md`
 - SQLite 在 WAL 模式下，单机并发读取性能足够支撑 50 人团队
 
 ### 4.5 自定义存储路径
