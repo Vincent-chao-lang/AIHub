@@ -5,6 +5,7 @@ ChromaDB 向量存储客户端。
 """
 
 import logging
+import os
 from pathlib import Path
 
 import chromadb
@@ -14,8 +15,8 @@ from services import embedding
 
 logger = logging.getLogger(__name__)
 
-# ChromaDB 持久化目录
-CHROMA_PATH = Path(__file__).parent.parent / ".chromadb"
+# ChromaDB 持久化目录，可通过 CHROMA_PATH 环境变量自定义
+CHROMA_PATH = Path(os.getenv("CHROMA_PATH", Path(__file__).parent.parent / ".chromadb"))
 COLLECTION_NAME = "messages"
 
 _client = None
