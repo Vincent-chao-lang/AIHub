@@ -19,5 +19,8 @@ frontend/dist/
 # OS
 .DS_Store
 
+# Docs (local reference, not part of the repo)
+docs/
+
 # Env
 .env
