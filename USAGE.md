@@ -215,7 +215,21 @@ sudo htpasswd -c /etc/nginx/.htpasswd admin
 └────────────────────────────────────────┘
 ```
 
-### 4.2 默认存储位置
+### 4.2 配置方式
+
+所有配置通过 `backend/.env` 文件管理：
+
+```bash
+# 创建配置文件
+cp backend/.env.example backend/.env
+
+# 编辑 .env，按需修改
+vim backend/.env
+```
+
+`.env` 文件在启动时自动加载，不会覆盖已有的系统环境变量。
+
+### 4.3 默认存储位置
 
 | 数据 | 路径 | 格式 |
 |------|------|------|
@@ -223,21 +237,19 @@ sudo htpasswd -c /etc/nginx/.htpasswd admin
 | 向量索引 | `backend/.chromadb/` | ChromaDB 持久化目录 |
 | Embedding 模型 | `backend/.models/` | HuggingFace 缓存 |
 
-### 4.3 切换到 PostgreSQL
+### 4.4 切换到 PostgreSQL
 
-SQLite 适合 10 万条消息以内的场景。如果数据量更大或需要高并发，可切换到 PostgreSQL：
+SQLite 适合 10 万条消息以内的场景。如果数据量更大或需要高并发，编辑 `.env` 文件：
 
 ```bash
-# 1. 安装 PostgreSQL 并创建数据库
-createdb aihub
+# backend/.env
+DATABASE_URL=postgresql://user:password@localhost:5432/aihub
+```
 
-# 2. 设置环境变量
-export DATABASE_URL="postgresql://user:password@localhost:5432/aihub"
+然后安装 PostgreSQL 驱动并重启：
 
-# 3. 安装 PostgreSQL 驱动
+```bash
 pip install psycopg2-binary
-
-# 4. 启动后端（表会自动创建）
 cd backend && python main.py
 ```
 
@@ -246,17 +258,16 @@ cd backend && python main.py
 - ChromaDB 仍然使用本地持久化目录，不受数据库切换影响
 - SQLite 在 WAL 模式下，单机并发读取性能足够支撑 50 人团队
 
-### 4.4 自定义存储路径
+### 4.5 自定义存储路径
+
+编辑 `.env` 文件：
 
 ```bash
-# 所有路径都支持环境变量配置
-export DATABASE_URL="sqlite:///data/aihub.db"  # 自定义数据库路径
-export CHROMA_PATH="/data/aihub-vectors"        # 自定义向量索引路径
-
-cd backend && python main.py
+DATABASE_URL=sqlite:///data/aihub.db   # 自定义 SQLite 路径
+CHROMA_PATH=/data/aihub-vectors        # 自定义向量索引路径
 ```
 
-### 4.5 备份与恢复
+### 4.6 备份与恢复
 
 **SQLite（推荐每天备份）：**
 
