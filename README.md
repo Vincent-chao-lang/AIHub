@@ -7,14 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
   <img src="https://img.shields.io/badge/python-3.10+-blue" alt="Python">
-  <img src="https://img.shields.io/badge/platform-Chrome%20Extension-brightgreen" alt="Platform">
 </p>
-
----
-
-## 一句话说清
-
-**一个浏览器扩展 + 一个本地后端。员工正常使用 ChatGPT、Claude、DeepSeek 等 AI 平台，对话自动汇聚到企业知识中枢。任何人在任何时候都可以检索、复用任何历史对话。数据 100% 在企业自己的服务器上。**
 
 ---
 
@@ -40,13 +33,13 @@ AI Memory Hub 把成本从"人"转移到"系统"：正常使用 AI，对话自�
 ```
 ┌──────────────────────────────────────────────────┐
 │                                                  │
-│  ChatGPT / Claude / DeepSeek / Kimi / Gemini     │  你已经在用的 AI 平台
+│  ChatGPT/Claude/DeepSeek /Kimi/Gemini/......     │  你已经在用的 AI 平台
 │         │                                        │
 │         ↓                                        │
-│  Chrome 浏览器扩展 · 静默采集 · 零手动操作         │  自动采集，不改变习惯
+│  静默采集 · 零手动操作         │  自动采集，不改变习惯
 │         │                                        │
 │         ↓                                        │
-│  企业知识中枢（本地 / 私有云部署）                  │
+│  企业知识中枢（本地 / 私有云部署）                    │
 │  ┌────────────────────────────────────────────┐  │
 │  │ 语义搜索 · 自动摘要 · 知识图谱 · 上下文生成  │  │  智能理解
 │  │ SQLite/PostgreSQL + ChromaDB/pgvector      │  │
@@ -73,7 +66,7 @@ AI Memory Hub 把成本从"人"转移到"系统"：正常使用 AI，对话自�
 
 | 模块 | 功能 |
 |------|------|
-| **智能采集** | 5 大 AI 平台自动记录 · 流式去重 · 用户标记 · 零手动 |
+| **智能采集** | 自动记录 · 流式去重 · 用户标记 · 零手动 |
 | **语义检索** | 向量 + 关键词混合搜索 · 跨平台 · 跨时间 · 跨人员 |
 | **自动摘要** | 标题 · 标签 · 摘要全自动本地生成 · 无需外部 API |
 | **知识图谱** | 标签重叠 + 语义相似双通道 · D3.js 力导向图可视化 |
@@ -130,7 +123,7 @@ SQLite + ChromaDB  →  PostgreSQL + pgvector  →  Milvus
   < 10 万条              10-100 万条                 > 100 万条
 ```
 
-详细升级路径 → [STORAGE.md](STORAGE.md)
+详细升级路径 → [docs/STORAGE.md](docs/STORAGE.md)
 
 ---
 
@@ -169,23 +162,7 @@ AIHub/
 | GET | `/graph` | 知识图谱数据 |
 | GET | `/stats` | 统计（总数/平台分布/用户统计/向量索引数） |
 
----
 
-## 文档索引
-
-| 文档 | 内容 |
-|------|------|
-| [USAGE.md](USAGE.md) | 部署与使用指南（4 种部署模式 · 备份恢复 · 运维管理） |
-| [STORAGE.md](STORAGE.md) | 存储升级路径（ChromaDB → pgvector → Milvus） |
-| [TECHNICAL.md](TECHNICAL.md) | 技术文档（架构设计 · 核心算法 · 设计取舍） |
-| [ENTERPRISE.md](ENTERPRISE.md) | 企业产品文档（场景 · ROI · 合规） |
-| [COMPLIANCE.md](COMPLIANCE.md) | GDPR/个保法合规设计 |
-| [BARRIER.md](BARRIER.md) | 竞争壁垒分析 |
-| [PRESENTATION.md](PRESENTATION.md) | 对外宣讲一页纸 |
-| [landing/](landing/) | 营销页面（中英双语） |
-| [marketing/](marketing/) | 营销内容（V2EX · 知乎 · 公众号 · 社交媒体） |
-
----
 
 ## 设计原则
 
@@ -207,4 +184,3 @@ AIHub/
 - [x] .env 配置 + PostgreSQL/pgvector 支持
 - [ ] 敏感信息检测 + 审计日志 + 合规报告
 - [ ] 更多信息源（企业微信 · 飞书 · GitHub · Notion）
-- [ ] 桌面应用（Tauri 打包）
