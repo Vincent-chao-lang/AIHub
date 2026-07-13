@@ -1,206 +1,246 @@
-# AI Memory Hub
+# AIHub
 
-> 企业 AI 知识资产平台。自动采集、智能关联、随时复用。
+> 企业 AI 可运营平台。自动采集、智能关联、透明审计。
 >
-> 员工和 AI 的每一次对话，都是企业的知识资产。**人走，知识留下。**
+> **人走，知识留下；AI 上线，你接得住。**
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
   <img src="https://img.shields.io/badge/python-3.10+-blue" alt="Python">
+  <img src="https://img.shields.io/badge/version-0.2.0-blue" alt="Version">
 </p>
+
+---
+
+## 目录
+
+1. [产品定位](#一产品定位)
+2. [V2 升级：从记忆到可运营](#二v2-升级从记忆到可运营)
+3. [核心能力](#三核心能力)
+4. [5 分钟跑起来](#四-5-分钟跑起来)
+5. [采集指南](#五采集指南)
+6. [数据查看](#六数据查看)
+7. [部署模式](#七-部署模式)
+8. [项目结构](#八-项目结构)
+9. [API 参考](#九-api-参考)
+10. [设计原则](#十-设计原则)
 
 ---
 
 ## 一、产品定位
 
-**AI Memory Hub** 是一个企业级 AI 知识资产管理平台。它自动采集、整理、关联员工与 AI（ChatGPT、Claude、DeepSeek 等）的所有高质量对话，将其转化为可检索、可关联、可复用的结构化知识资产，实现 **"人走，知识留下，价值继续"**。
+**AIHub** 解决企业 AI 化过程中的两个核心问题：
+
+| | V1 · 记忆中枢 | V2 · 运营平面 |
+|---|---|---|
+| **问题** | 员工和 AI 的对话，离职就没了 | AI 系统跑起来，没人知道它在干什么 |
+| **回答** | 自动采集、结构化、可检索 | 可观测、可审计、可度量、可恢复 |
+| **一句话** | 人走，知识留下 | AI 上线，你接得住 |
 
 ---
 
-## 二、企业为什么需要它
+## 二、V2 升级：从记忆到可运营
 
-### 2.1 一个新问题的出现
-
-```
-2023 年开始，你的员工每天都在和 AI 对话：
-
-  研发 → ChatGPT 讨论架构方案
-  运维 → Claude 解决部署故障
-  产品 → DeepSeek 做竞品分析
-  设计 → Gemini 找设计灵感
-  运营 → Kimi 写内容策略
-
-这些对话里藏着：
-  · 技术决策的推演过程
-  · 故障排查的完整思路链
-  · 对业务的深度思考
-  · 反复验证过的最佳实践
-```
-
-### 2.2 一个老问题的新形式
+### 2.1 为什么需要运营平面
 
 ```
-传统离职交接：
+2024-2026 年，你的团队开始大规模使用 AI 编程工具：
 
-  员工写一份交接文档（如果有的话）
-  → 只记录了"结论"，丢失了"思考过程"
-  → AI 对话中的试错、推演、对比全部消失
-  → 新人面对同样问题，从零开始和 AI 聊
+  研发用 Claude Code 写代码
+  运维用 Cursor 修配置
+  数据团队用自建 Agent 跑分析
 
-结果：
-  张三用 AI 花 3 天解决了部署问题，离职了。
-  李四入职遇到同样的故障，再花 3 天从零开始。
+  问题来了：
+  · 上周谁用了什么模型？花了多少 Token？
+  · AI 有没有执行过危险命令？谁审批的？
+  · 出问题时，能定位到是哪次调用、哪个 Prompt 导致的吗？
+  · 那个 Agent 的 Prompt 改了之后，效果变好还是变差？
 
-  知识在，但不可见。
-  经验在，但无法复用。
+  答案很可能是：不知道。
 ```
 
-### 2.3 量化损失
+### 2.2 AI 可运营七维度
 
-```
-假设一个 50 人的技术团队，每人每天和 AI 进行 5 次有价值的对话：
+AIHub V2 围绕**"AI 可运营七维度"模型**构建了完整的度量与审计体系：
 
-  日均知识产出：    50 × 5 = 250 条 AI 决策/推演记录
-  月均知识产出：    250 × 22 = 5,500 条
-  年均知识产出：    5,500 × 12 = 66,000 条
+| # | 维度 | AIHub 的能力 |
+|---|------|-------------|
+| 1 | **可观测·可归因** | 每次 LLM 调用自动记录：谁、什么模型、什么 Prompt、耗时、Token |
+| 2 | **可评估·可度量** | 质量分、净收益、返工率——从运行数据自动计算 |
+| 3 | **可恢复·可兜底** | 每个 AI 系统登记爆炸半径、回滚目标、熔断开关 |
+| 4 | **可演进·可迭代** | Prompt 版本追踪 + 图谱关联——改 Prompt 之前知道影响范围 |
+| 5 | **可治理·可控** | 审批结果回流审计链——高风险操作有痕迹可追溯 |
+| 6 | **可学习·可改进** | 错误事件自动沉淀为失败样本 → 提升为回归测试集 |
+| 7 | **成本可控** | Token → 金额折算 + 预算上限 + 越线告警——FinOps for AI |
 
-  如果 80% 随员工流动而不可检索，每年损失：
-    → 约 52,800 条有价值的知识碎片
-    → 无数可复用的决策链、故障排查路径、方案对比
-
-  每一片碎片背后，都是员工花时间与 AI 碰撞出的认知成果。
-```
+`GET /operability/score` 返回 0-21 分自评 + 成熟度分档（危险区 / 脆弱区 / 基本可运营 / 较成熟）。
 
 ---
 
-## 三、解决方案
+## 三、核心能力
 
-### 3.1 一句话说清楚
-
-> 员工用 AI 的同时，系统自动记录、理解、关联每一次对话，构建企业自有 AI 知识图谱。
-> 人来，知识自动汇聚；人走，知识结构化管理，随时被新人检索和复用。
-
-### 3.2 核心能力
+### 3.1 四条采集路径，覆盖全部 AI 使用场景
 
 ```
-┌──────────────────────────────────────────────────────┐
-│              自动采集（零门槛）                         │
-│  浏览器扩展静默运行，员工正常使用 AI，对话自动入库。      │
-│  不需要手动粘贴，不需要额外操作，不改变工作习惯。         │
-└──────────────────────────┬───────────────────────────┘
-                           │
-┌──────────────────────────┴───────────────────────────┐
-│              智能理解（结构化）                         │
-│  每条对话 → 自动生成标题、标签、摘要                    │
-│  跨平台语义搜索 → 用自然语言找到任何历史对话             │
-│  知识图谱 → 自动发现对话之间的深层关联                  │
-└──────────────────────────┬───────────────────────────┘
-                           │
-┌──────────────────────────┴───────────────────────────┐
-│              知识复用（价值闭环）                       │
-│  新人遇到问题 → 搜索关键词 → 看到前辈的完整 AI 决策链    │
-│  AI 回答时 → 注入历史上下文 → 基于团队知识积累来回答    │
-│  团队知识 → 按人/按项目/按主题 → 随时检索和复用         │
-└──────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                     采集层（零侵入）                           │
+│                                                              │
+│  Chrome 扩展     │  HTTP 代理      │  OTel Receiver  │  REST  │
+│  浏览器 AI 对话   │  Claude Code    │  LangChain 等   │  自定义 │
+│  ChatGPT/Claude  │  Cursor/Cont..  │  自建 Agent     │  任意   │
+│  /Kimi/DeepSeek  │  终端 AI 编程    │  框架自动埋点    │  场景   │
+└──────────┬──────────────────────────┬──────────────────┬─────┘
+           │                          │                  │
+           └──────────────────────────┴──────────────────┘
+                                      │
+                                      ▼
+┌──────────────────────────────────────────────────────────────┐
+│                   AIHub 后端 (:8712)                          │
+│                                                              │
+│  对话记忆          │  运营平面（V2 新增）                       │
+│  /messages         │  /system-events  系统事件采集            │
+│  /search           │  /v1/traces      OTel 标准协议           │
+│  /context          │  /metrics         质量/返工/覆盖率        │
+│  /graph            │  /cost            成本归因+预算           │
+│  /projects         │  /operability/score  七维度自评           │
+│  /stats            │  /systems/{id}/runbook  兜底/回滚         │
+│                    │  /failure-samples    失败样本→回归集       │
+│                                                              │
+│  SQLite + ChromaDB（默认）  ←→  PostgreSQL + pgvector（可选）  │
+└──────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌──────────────────────────────────────────────────────────────┐
+│              AIHub 前端 (:5173)                               │
+│         时间线 │ 对话详情 │ 知识图谱 │ 项目聚类                │
+└──────────────────────────────────────────────────────────────┘
 ```
+
+### 3.2 知识记忆（V1 延续）
+
+- **自动采集**：浏览器扩展静默运行，员工正常使用 AI，对话自动入库
+- **智能理解**：每条对话自动生成标题、标签、摘要；跨平台语义搜索
+- **知识图谱**：自动发现对话之间的深层关联，按主题聚合为项目
+- **上下文注入**：AI 回答时注入历史上下文，基于团队知识积累来回答
 
 ---
 
-## 四、关键场景
+## 四、5 分钟跑起来
 
-### 场景 1：新人入职
-
-```
-传统方式：
-  新人花 2-4 周熟悉项目，遇到问题问同事或自己摸索和 AI 对话
-  → 其实前辈早就和 AI 深入讨论过同样的问题
-
-AI Memory Hub：
-  新人搜索"微服务部署" → 看到：
-    · 张三 3 个月前与 ChatGPT 的完整架构讨论
-    · 李四 1 个月前与 Claude 的故障排查全过程
-    · 系统自动生成的关联对话：CI/CD 配置、容器化方案
-  → 新人在 AI 提问时，注入前辈的上下文
-  → AI 基于团队已有认知来回答，而非从零开始
-
-效果：新人上手速度 2x 提升，避免重复踩坑
-```
-
-### 场景 2：员工离职
-
-```
-传统方式：
-  张三离职 → 写交接文档 → 文档里的结论，丢失了 90% 的思考过程
-  → 那场"和 AI 反复讨论了 3 个小时才搞定的故障排查"彻底消失
-
-AI Memory Hub：
-  张三的所有 AI 对话早已自动归档，按主题分类，图谱关联完整
-  → 李四搜索同一问题 → 直接看到张三当时的完整认知链
-  → 不只是结论，还有：
-    · 张三问了什么
-    · AI 给了哪些方案
-    · 张三做了什么取舍
-    · 最终为什么选了方案 A 而不是 B
-
-效果：知识保留率从 10% → 95%，真正的"人走知识留"
-```
-
-### 场景 3：跨部门经验复用
-
-```
-传统方式：
-  研发团队用 AI 解决了性能问题
-  运维团队可能永远不知道这个方案
-  → 遇到类似问题各自重新摸索
-
-AI Memory Hub：
-  搜索"数据库性能" → 跨部门、跨平台、跨时间维度的所有相关对话汇聚一处
-  → 研发的架构思路 + 运维的实战经验 + 产品的业务视角
-  → 知识自动缝合，打破信息孤岛
-
-效果：团队越用越聪明，知识自适应组织
-```
-
-### 场景 4：企业 AI 审计与合规
-
-```
-传统方式：
-  员工和 AI 聊了什么 → 无从知晓
-  是不是把内部代码贴给了 ChatGPT → 无法审查
-  大模型使用有没有合规风险 → 没法管理
-
-AI Memory Hub：
-  所有 AI 对话完整记录，按人、平台、时间可检索
-  → 管理员可以看到：谁、在什么平台、讨论了什么话题
-  → 敏感信息自动标记（可配置关键词告警）
-  → 满足企业对 AI 使用的审计和合规需求
-
-效果：AI 使用透明化，安全与效率兼得
-```
-
----
-
-## 五、 5 分钟跑起来
+### 4.1 一键启动
 
 ```bash
 git clone https://github.com/Vincent-chao-lang/AIHub.git
 cd AIHub
 ./start.sh
+# → 后端 http://localhost:8712
+# → 前端 http://localhost:5173
+# → API 文档 http://localhost:8712/docs
 ```
 
+### 4.2 加载浏览器扩展
+
 ```
-# 加载浏览器扩展
 Chrome → chrome://extensions → 开发者模式 → 加载已解压 → 选择 extension/ 目录
+→ 打开 ChatGPT/Claude.ai/Kimi/DeepSeek → 正常聊天 → 自动采集
+```
 
-# 打开任意 AI 平台 → 正常聊天 → 点击 🧠 图标 → 检索记忆
-# 或访问 http://localhost:5173 → Web 面板
+### 4.3 启动 HTTP 代理（采集 Claude Code / Cursor）
+
+```bash
+cd backend
+python proxy.py
+
+# 如果使用智谱/DeepSeek 等兼容 API：
+UPSTREAM_ANTHROPIC=https://open.bigmodel.cn/api/anthropic python proxy.py
+```
+
+Claude Code 配置（`settings.json`）：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:8888"
+  }
+}
+```
+
+Cursor / Continue 配置：
+
+```bash
+export OPENAI_BASE_URL=http://localhost:8888
 ```
 
 **数据完全在本地。** 不注册、不联网、不上传。你拥有全部数据。
 
 ---
 
-## 六、 部署模式
+## 五、采集指南
+
+### 快速对照
+
+| 你用的是什么 | 怎么接入 | 采集路径 |
+|-------------|---------|---------|
+| 浏览器 ChatGPT / Claude.ai / Kimi / DeepSeek / Gemini | 装 Chrome 扩展 | `/messages` |
+| 终端 Claude Code | 配 `ANTHROPIC_BASE_URL` | `/system-events` |
+| 终端 Cursor / Continue | 配 `OPENAI_BASE_URL` | `/system-events` |
+| 自建 LangChain / CrewAI Agent | 配 OTel Exporter | `/v1/traces` |
+| 任意 HTTP 客户端 | 调 `POST /system-events` | `/system-events` |
+
+### 采集到的数据示例
+
+```
+[08:14:51] claude-code | tool_call | glm-5.2 | 1251 tok | 43.8s | success
+  💬 提示词: 当前系统的冗余和重复代码检测
+  📋 系统:   You are Claude Code, Anthropic's official CLI...
+  🔧 工具:   Read×7
+```
+
+每条事件记录：模型、Token 用量、延迟、工具调用、提示词原文、System Prompt 全文。
+
+---
+
+## 六、数据查看
+
+### 命令行
+
+```bash
+curl http://localhost:8712/stats              # 全局统计
+curl http://localhost:8712/metrics            # 运营指标（质量分/返工率/覆盖率）
+curl http://localhost:8712/cost               # 成本归因（按系统/Token）
+curl http://localhost:8712/operability/score  # 七维度自评分
+curl http://localhost:8712/failure-samples    # 失败样本
+```
+
+### Web 前端
+
+| 页面 | 路由 | 内容 |
+|------|------|------|
+| 时间线 | `/` | 按日期浏览 AI 对话 |
+| 对话详情 | `/conversation/:id` | 完整消息列表 |
+| 知识图谱 | `/graph` | D3.js 可视化知识网络 |
+| 项目聚类 | `/projects` | 按主题自动归类 |
+
+### 直接查数据库
+
+```bash
+cd backend
+python -c "
+from sqlmodel import Session, select
+from db.database import engine
+from models.operability import SystemEvent
+import json
+
+with Session(engine) as session:
+    for e in session.exec(select(SystemEvent).order_by(SystemEvent.created_at.desc()).limit(5)).all():
+        tools = ','.join([t['tool'] for t in json.loads(e.tool_calls or '[]')])
+        print(f'[{e.timestamp}] {e.ai_system_id} | {e.event_type} | {e.model_version} | {e.cost_tokens}tok | {e.latency_ms}ms | {e.status} | {tools}')
+"
+```
+
+---
+
+## 七、部署模式
 
 | 模式 | 适合 | 配置 |
 |------|------|------|
@@ -209,15 +249,7 @@ Chrome → chrome://extensions → 开发者模式 → 加载已解压 → 选�
 | **Docker** | 标准化部署 | `docker-compose up` |
 | **HTTPS + 反向代理** | 远程团队 | Nginx + Let's Encrypt |
 
-详细部署指南 → [USAGE.md](USAGE.md)
-
----
-
-## 七、 存储与扩展
-
-默认 SQLite + ChromaDB + 本地 BGE 模型，零配置开箱即用。
-
-随着团队规模增长，可平滑升级：
+### 存储升级
 
 ```
 SQLite + ChromaDB  →  PostgreSQL + pgvector  →  Milvus
@@ -225,60 +257,102 @@ SQLite + ChromaDB  →  PostgreSQL + pgvector  →  Milvus
   < 10 万条              10-100 万条                 > 100 万条
 ```
 
-Embedding 模型同样支持一行配置切换：
-
+```bash
+# backend/.env
+DATABASE_URL=postgresql://user:pass@host:5432/aihub
+VECTOR_STORE=pgvector
 ```
-本地 BGE-small（512 维）  →  BGE-large / 其他本地模型  →  OpenAI / 智谱 API
-  默认                            改模型名                    改 EMBEDDING_PROVIDER
-```
 
-切换 embedding 后运行 `python backend/rebuild_index.py` 即可全量重建向量索引。
-
-详细升级路径 → [docs/STORAGE.md](docs/STORAGE.md)
+详见 [docs/STORAGE.md](docs/STORAGE.md) 和 [docs/USAGE.md](docs/USAGE.md)。
 
 ---
 
-## 八、 项目结构
+## 八、项目结构
 
 ```
 AIHub/
-├── start.sh                   # 一键启动
-├── backend/                   # FastAPI + SQLite + ChromaDB
-│   ├── api/routes.py          # 10 个 API 端点
-│   ├── db/                    # 数据库 + 向量存储（ChromaDB/pgvector）
-│   ├── models/                # 数据模型
-│   └── services/              # embedding · 摘要 · 搜索 · 上下文生成
-├── extension/                 # Chrome 扩展 (Manifest V3)
-│   ├── content/               # 5 平台 DOM 监听
-│   ├── sidepanel/             # 侧边栏 UI + 逻辑
-│   └── options/               # 设置页
-├── frontend/                  # React + Vite + TypeScript + D3.js
-│   └── src/pages/             # 时间线 · 项目 · 上下文 · 图谱
-└── landing/                   # 营销页面（中英双语）
+├── start.sh                        # 一键启动
+├── backend/                        # FastAPI + SQLite + ChromaDB
+│   ├── main.py                     # 入口 (:8712)
+│   ├── proxy.py                    # HTTP 透明代理 (:8888) [V2 新增]
+│   ├── api/
+│   │   ├── routes.py               # 10 个对话记忆端点
+│   │   └── operability_routes.py   # 8 个运营平面端点 [V2 新增]
+│   ├── db/                         # 数据库 + 向量存储
+│   ├── models/
+│   │   ├── message.py              # 对话模型
+│   │   └── operability.py          # 运营模型 [V2 新增]
+│   └── services/
+│       ├── context.py              # 图谱上下文生成
+│       ├── summarizer.py           # TF-IDF 自动摘要
+│       ├── search.py               # 语义搜索
+│       ├── embedding.py            # 本地 BGE 模型
+│       ├── event_collector.py      # 系统事件采集 [V2 新增]
+│       ├── operability.py          # 度量/成本/评分引擎 [V2 新增]
+│       └── otel_receiver.py        # OpenTelemetry 接收器 [V2 新增]
+├── extension/                      # Chrome 扩展 (Manifest V3)
+│   └── content/                    # 5 平台 DOM 监听
+├── frontend/                       # React + Vite + TypeScript + D3.js
+│   └── src/pages/                  # 时间线 · 项目 · 图谱 · 上下文
+├── landing/                        # 营销页面
+└── docs/                           # 文档
+    ├── USAGE.md                    # 使用指南 [V2 新增]
+    ├── TECHNICAL.md                # 技术架构
+    ├── STORAGE.md                  # 存储升级路径
+    └── 运营平面开发设计文档.md        # 运营平面设计规格
 ```
 
 ---
 
-## 九、 API
+## 九、API 参考
+
+### 对话记忆（V1，10 个端点）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/messages` | 上传消息（自动 embedding + 摘要） |
-| GET | `/timeline` | 时间线（按对话聚合，支持 `?user_id=` 筛选） |
+| GET | `/timeline` | 时间线（按对话聚合） |
 | GET | `/conversations/{id}` | 对话详情 |
 | GET | `/conversations/{id}/related` | 相关对话推荐 |
 | POST | `/search` | 语义搜索（向量 + 关键词回退） |
-| POST | `/context` | 图谱驱动上下文生成（含 `max_tokens` 智能截断） |
+| POST | `/context` | 图谱驱动上下文生成 |
 | GET | `/projects` | 项目聚合 |
 | GET | `/graph` | 知识图谱数据 |
-| GET | `/stats` | 统计（总数/平台分布/用户统计/向量索引数/embedding 信息） |
+| POST | `/summarize/{id}` | 重新生成摘要 |
+| GET | `/stats` | 统计概览 |
 
-## 十、 设计原则
+### 运营平面（V2，9 个端点）
 
-1. **自动采集** — 知识管理成本从"人"转移到"系统"，员工无需额外操作
-2. **本地优先** — 数据 100% 归你，也支持服务器部署
-3. **企业级扩展** — SQLite → PostgreSQL，ChromaDB → pgvector，随规模平滑升级
-4. **零摩擦接入** — 不改现有系统，不要求切换 AI 平台，不改变工作习惯
-5. **图谱驱动** — 关联发现用本地算法，不依赖外部 LLM，零成本零延迟
-6. **团队即知识** — 同一套系统，一人用是外脑，团队用是知识库
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/system-events` | 接收系统运行事件 |
+| POST | `/v1/traces` | OTLP 标准协议（OpenTelemetry） |
+| GET | `/metrics` | 质量分/净收益/返工率/覆盖率 |
+| GET | `/cost` | 成本归因 + 预算对比 |
+| GET | `/operability/score` | 七维度自评分（0-21） |
+| GET | `/systems/{id}/runbook` | 获取兜底/回滚配置 |
+| POST | `/systems/{id}/runbook` | 登记兜底/回滚配置 |
+| GET | `/failure-samples` | 失败样本列表 |
+| POST | `/failure-samples/{id}/promote` | 提升为回归测试集 |
 
+启动后端后访问 `http://localhost:8712/docs` 可在线调试所有端点。
+
+---
+
+## 十、设计原则
+
+1. **自动采集** — 采集成本从"人"转移到"系统"，无需额外操作
+2. **本地优先** — 数据 100% 归你，零网络依赖
+3. **非破坏性** — 新功能纯增量，不影响已有数据和 API
+4. **复用优先** — 运营事件复用对话记忆的 embedding + 摘要 + 图谱管线
+5. **元数据最小化** — 采集运营指标（模型、Token、延迟），原始代码/对话内容不落地
+6. **企业级扩展** — SQLite → PostgreSQL，ChromaDB → pgvector，随规模平滑升级
+
+---
+
+<p align="center">
+  <a href="https://github.com/Vincent-chao-lang/AIHub">GitHub</a> ·
+  <a href="docs/USAGE.md">使用文档</a> ·
+  <a href="docs/TECHNICAL.md">技术架构</a> ·
+  <a href="docs/运营平面开发设计文档.md">运营平面设计</a>
+</p>
