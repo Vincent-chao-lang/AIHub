@@ -66,23 +66,66 @@ def _hash_prompt_system(request_body: dict) -> Optional[str]:
 
 
 def _extract_user_input(request_body: dict) -> Optional[str]:
-    """从请求体中提取最后一条用户消息的原文。"""
+    """从请求体中提取真正的用户提示词（跳过 tool_result）。
+
+    返回最后一条非工具结果的用户消息原文。
+    """
     messages = request_body.get("messages", [])
     if not messages:
         return None
-    # 找最后一条 role=user 的消息
+    # 从后往前找第一条 role=user 且不是 tool_result 的消息
     for msg in reversed(messages):
-        if msg.get("role") == "user":
-            content = msg.get("content", "")
-            # Anthropic 支持数组格式 content: [{type: "text", text: "..."}]
-            if isinstance(content, list):
-                text_parts = []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text_parts.append(block.get("text", ""))
-                return " ".join(text_parts) if text_parts else str(content)
-            return str(content) if content else None
+        if msg.get("role") != "user":
+            continue
+        content = msg.get("content", "")
+        if _is_tool_result(content):
+            continue
+        return _format_content(content)
     return None
+
+
+def _extract_system_prompt(request_body: dict) -> Optional[str]:
+    """提取 system prompt 原文（用于审计归因）。"""
+    system = request_body.get("system")
+    if system:
+        if isinstance(system, list):
+            return json.dumps(system, ensure_ascii=False)
+        return str(system)
+    # OpenAI 格式：messages[0] 可能是 system
+    messages = request_body.get("messages", [])
+    if messages and messages[0].get("role") == "system":
+        return str(messages[0].get("content", ""))
+    return None
+
+
+def _is_tool_result(content) -> bool:
+    """判断 content 是否只包含 tool_result 块（非用户自然语言输入）。"""
+    if isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "tool_result":
+                return True
+    return False
+
+
+def _format_content(content) -> str:
+    """将 Anthropic content（字符串或数组）格式化为可读文本。"""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        text_parts = []
+        for block in content:
+            if isinstance(block, dict):
+                t = block.get("type", "")
+                if t == "text":
+                    text_parts.append(block.get("text", ""))
+                elif t == "tool_result":
+                    result_content = block.get("content", "")
+                    if isinstance(result_content, str):
+                        text_parts.append(f"[工具结果: {result_content[:100]}]")
+                    else:
+                        text_parts.append("[工具结果]")
+        return " ".join(text_parts) if text_parts else str(content)
+    return str(content)
 
 
 def extract_anthropic_metadata(
@@ -113,7 +156,10 @@ def extract_anthropic_metadata(
         "latency_ms": latency_ms,
         "cost_tokens": cost_tokens,
         "status": status,
-        "event_metadata": json.dumps({"user_input": _extract_user_input(request_body)}, ensure_ascii=False),
+        "event_metadata": json.dumps({
+            "user_input": _extract_user_input(request_body),
+            "system_prompt": _extract_system_prompt(request_body),
+        }, ensure_ascii=False),
     }
 
 
@@ -155,7 +201,10 @@ def extract_anthropic_stream_metadata(
         "latency_ms": latency_ms,
         "cost_tokens": input_tokens + output_tokens,
         "status": status,
-        "event_metadata": json.dumps({"user_input": _extract_user_input(request_body)}, ensure_ascii=False),
+        "event_metadata": json.dumps({
+            "user_input": _extract_user_input(request_body),
+            "system_prompt": _extract_system_prompt(request_body),
+        }, ensure_ascii=False),
     }
 
 
@@ -188,7 +237,10 @@ def extract_openai_metadata(
         "latency_ms": latency_ms,
         "cost_tokens": cost_tokens,
         "status": status,
-        "event_metadata": json.dumps({"user_input": _extract_user_input(request_body)}, ensure_ascii=False),
+        "event_metadata": json.dumps({
+            "user_input": _extract_user_input(request_body),
+            "system_prompt": _extract_system_prompt(request_body),
+        }, ensure_ascii=False),
     }
 
 
