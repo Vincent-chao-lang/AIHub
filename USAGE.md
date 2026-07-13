@@ -202,7 +202,7 @@ sudo htpasswd -c /etc/nginx/.htpasswd admin
 │  │   SQLite      │  │    ChromaDB     │ │
 │  │  aihub.db    │  │  .chromadb/     │ │
 │  │               │  │                  │ │
-│  │ · 消息内容     │  │ · 384 维向量     │ │
+│  │ · 消息内容     │  │ · 向量索引       │ │
 │  │ · 标题/标签   │  │ · 余弦相似度索引  │ │
 │  │ · 摘要        │  │ · HNSW 索引     │ │
 │  │ · 会话元数据   │  │                  │ │
@@ -237,7 +237,38 @@ vim backend/.env
 | 向量索引 | `backend/.chromadb/` | ChromaDB 持久化目录 |
 | Embedding 模型 | `backend/.models/` | HuggingFace 缓存 |
 
-### 4.4 切换到 PostgreSQL
+### 4.4 Embedding 方案配置
+
+AI Memory Hub 支持多种 embedding 方案，通过 `.env` 一行配置切换：
+
+```bash
+# backend/.env
+# 默认：本地 BGE-small 模型（512 维），零配置
+EMBEDDING_PROVIDER=local
+EMBEDDING_MODEL=BAAI/bge-small-zh-v1.5
+
+# 切换到 OpenAI embedding API
+# EMBEDDING_PROVIDER=openai
+# EMBEDDING_MODEL=text-embedding-3-small   # 1536 维
+# OPENAI_API_KEY=sk-xxx
+# OPENAI_BASE_URL=                         # 可选，代理/中转地址
+# EMBEDDING_DIM=512                        # 可选，text-embedding-3 系列支持指定维度
+```
+
+| Provider | 说明 | 默认模型 | 维度 |
+|----------|------|---------|------|
+| `local`（默认） | 本地 sentence-transformers | `BAAI/bge-small-zh-v1.5` | 512 |
+| `openai` | OpenAI text-embedding API | `text-embedding-3-small` | 1536（可调） |
+
+**切换 provider 后**：维度变化会导致已有向量索引失效，启动时系统会打印警告。运行以下命令全量重建索引：
+
+```bash
+python backend/rebuild_index.py --yes
+```
+
+脚本会遍历所有消息 → 重新 embedding → 覆盖写入向量存储。
+
+### 4.5 切换到 PostgreSQL
 
 SQLite 适合 10 万条消息以内的场景。如果数据量更大或需要高并发，编辑 `.env` 文件：
 
@@ -255,11 +286,11 @@ cd backend && python main.py
 
 **注意**：
 - 切换数据库后，SQLite 中的旧数据不会自动迁移。需要导出再导入（或从零开始）
-- 配合 PostgreSQL 时，建议同步切换向量存储为 pgvector（`VECTOR_STORE=pgvector`）
+- 配合 PostgreSQL 时，建议同步切换向量存储为 pgvector（`.env` 中设置 `VECTOR_STORE=pgvector`）
 - 详细升级路径见 `STORAGE.md`
 - SQLite 在 WAL 模式下，单机并发读取性能足够支撑 50 人团队
 
-### 4.5 自定义存储路径
+### 4.6 自定义存储路径
 
 编辑 `.env` 文件：
 
@@ -268,7 +299,7 @@ DATABASE_URL=sqlite:///data/aihub.db   # 自定义 SQLite 路径
 CHROMA_PATH=/data/aihub-vectors        # 自定义向量索引路径
 ```
 
-### 4.6 备份与恢复
+### 4.7 备份与恢复
 
 **SQLite（推荐每天备份）：**
 
@@ -389,10 +420,12 @@ tar -xzf chromadb-backup-20260528.tar.gz
 ```bash
 # API 是否正常
 curl http://127.0.0.1:8712/stats
-# → {"total_messages": 1234, "by_platform": {...}, "by_user": {...}}
+# → {"total_messages": 1234, "by_platform": {...}, "by_user": {...},
+#     "vector_index_count": 1234, "embedding_provider": "local:BAAI/bge-small-zh-v1.5",
+#     "embedding_dimension": 512}
 
 # 向量索引是否正常
-curl http://127.0.0.1:8712/stats | jq .vector_count
+curl http://127.0.0.1:8712/stats | jq .vector_index_count
 ```
 
 ### 7.2 查看日志
@@ -410,9 +443,10 @@ docker-compose logs -f aihub
 | 指标 | 获取方式 | 健康范围 |
 |------|---------|---------|
 | 消息总数 | `GET /stats` | 持续增长 |
-| 向量索引数 | `GET /stats` → `vector_count` | 应 ≈ 消息总数 |
+| 向量索引数 | `GET /stats` → `vector_index_count` | 应 ≈ 消息总数 |
+| Embedding 维度 | `GET /stats` → `embedding_dimension` | 取决于当前 provider |
 | 数据库大小 | `ls -lh backend/aihub.db` | 每条消息约 2-5KB |
-| 向量索引大小 | `du -sh backend/.chromadb/` | 每条向量约 1.5KB |
+| 向量索引大小 | `du -sh backend/.chromadb/` | 每条向量约 ~维度×4 字节 |
 | 磁盘剩余 | `df -h` | > 10GB |
 
 ---
@@ -463,7 +497,25 @@ A:
 
 **Q: ChromaDB 能换成 pgvector 或 Milvus 吗？**
 
-A: 当前不支持。ChromaDB 在 10 万条向量以内性能优秀且零配置。如果需要更大规模，可以在 Issue 中提出需求。
+A: 已支持 pgvector。在 `.env` 中设置 `VECTOR_STORE=pgvector` 并配置 PostgreSQL 即可。Milvus 暂不支持，ChromaDB 在 10 万条向量以内性能优秀且零配置。
+
+**Q: 如何切换 Embedding 模型？**
+
+A: 编辑 `.env` 文件：
+```bash
+# 使用本地其他模型
+EMBEDDING_MODEL=BAAI/bge-large-zh-v1.5    # 1024 维
+
+# 切换到 OpenAI API
+EMBEDDING_PROVIDER=openai
+EMBEDDING_MODEL=text-embedding-3-small
+OPENAI_API_KEY=sk-xxx
+```
+切换后运行 `python backend/rebuild_index.py --yes` 重建向量索引。
+
+**Q: 切换 embedding 后需要重建索引吗？**
+
+A: 如果维度不变（如 BGE-small → 同维度模型），通常不需要。如果维度变化（如 512 → 1536），必须重建。启动时系统会自动检测维度是否匹配，不匹配时打印警告。
 
 **Q: 如何更新到最新版本？**
 

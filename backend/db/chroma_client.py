@@ -11,7 +11,7 @@ from pathlib import Path
 import chromadb
 from chromadb.config import Settings
 
-from services import embedding
+from services.embedding_provider import get_embedding_provider
 
 logger = logging.getLogger(__name__)
 
@@ -39,27 +39,28 @@ def _get_collection() -> chromadb.Collection:
     global _collection
     if _collection is None:
         client = _get_client()
-        dim = embedding.get_embedding_dim()
-        # 删除旧的 collection（如果维度不匹配）
-        try:
-            old = client.get_collection(COLLECTION_NAME)
-            if old.count() > 0:
-                # 保留旧 collection，后续可迁移
-                pass
-        except Exception:
-            pass
+        provider = get_embedding_provider()
+        dim = provider.get_dimension()
 
         _collection = client.get_or_create_collection(
             name=COLLECTION_NAME,
             metadata={"hnsw:space": "cosine", "dimension": dim},
         )
+        # 检查已有 collection 的维度是否匹配
+        existing_dim = _collection.metadata.get("dimension") if _collection.metadata else None
+        if existing_dim and int(existing_dim) != dim:
+            logger.warning(
+                f"向量维度不匹配！当前 provider 维度={dim}，"
+                f"已有 collection 维度={existing_dim}。"
+                f"请运行 python backend/rebuild_index.py 重建索引"
+            )
     return _collection
 
 
 def add_message(msg_id: str, content: str, metadata: dict | None = None):
     """将消息添加到向量索引。"""
     try:
-        emb = embedding.embed_texts([content])
+        emb = get_embedding_provider().embed_texts([content])
         collection = _get_collection()
         collection.add(
             ids=[msg_id],
@@ -78,7 +79,7 @@ def search_similar(query: str, top_k: int = 20) -> list[dict]:
     返回格式: [{"id": msg_id, "score": float, "metadata": dict}, ...]
     """
     try:
-        query_emb = embedding.embed_query(query)
+        query_emb = get_embedding_provider().embed_query(query)
         collection = _get_collection()
         results = collection.query(
             query_embeddings=[query_emb],
@@ -119,7 +120,7 @@ def find_related_conversations(
     返回格式: [{"conversation_id": str, "score": float, "matched_message": dict}, ...]
     """
     try:
-        query_emb = embedding.embed_query(query_text)
+        query_emb = get_embedding_provider().embed_query(query_text)
         collection = _get_collection()
         # 多拉一些结果，因为要过滤掉同一对话的消息
         results = collection.query(

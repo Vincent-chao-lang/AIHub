@@ -29,6 +29,7 @@ _load_env()
 
 from db.database import init_db
 from api.routes import router
+from api.operability_routes import operability_router
 
 
 @asynccontextmanager
@@ -38,9 +39,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AI Memory Hub",
-    description="本地 AI 对话长期记忆系统",
-    version="0.1.0",
+    title="AI Operability Hub",
+    description="企业 AI 可运营平台 — 记忆中枢 + 运营平面",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -53,6 +54,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(operability_router)
 
 
 if __name__ == "__main__":

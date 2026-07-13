@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DecisionHub — 企业决策与组织智慧平台 | Enterprise Decision Intelligence Platform</title>
+<style>
+  :root {
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  [data-theme="night"] {
+    --bg: #08080d;
+    --surface: #101018;
+    --surface2: #181820;
+    --border: #252535;
+    --text: #b0b0be;
+    --text-dim: #6a6a7c;
+    --text-bright: #eeeef5;
+    --accent: #6366f1;
+    --accent2: #a78bfa;
+    --accent-glow: var(--accent-glow);
+    --accent-glow2: var(--accent-glow2);
+    --accent-glow3: var(--accent-glow3);
+    --accent-glow4: var(--accent-glow4);
+    --red-glow: var(--red-glow);
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --cyan: #06b6d4;
+    --nav-bg: rgba(8,8,13,0.85);
+    --card-hover-border: #3a3a50;
+    --badge-bg: var(--surface);
+  }
+  [data-theme="aurora"] {
+    --bg: #f4f4f8;
+    --surface: #ffffff;
+    --surface2: #f0f0f5;
+    --border: #e2e2ea;
+    --text: #58586a;
+    --text-dim: #9090a0;
+    --text-bright: #1a1a2e;
+    --accent: #0d9488;
+    --accent2: #14b8a6;
+    --accent-glow: rgba(13,148,136,0.12);
+    --accent-glow2: rgba(245,158,11,0.12);
+    --accent-glow3: rgba(34,197,94,0.12);
+    --accent-glow4: rgba(6,182,212,0.12);
+    --red-glow: rgba(239,68,68,0.06);
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --cyan: #0891b2;
+    --nav-bg: rgba(244,244,248,0.88);
+    --card-hover-border: #d0d0da;
+    --badge-bg: var(--surface);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px;
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--nav-bg); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    height: 56px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+  }
+  nav .logo { font-weight: 700; font-size: 17px; color: var(--text-bright); }
+  nav .logo span { color: var(--accent); }
+  nav .nav-links { display: flex; align-items: center; gap: 20px; }
+  nav a { color: var(--text-dim); text-decoration: none; font-size: 13px; font-weight: 500; }
+  nav a:hover { color: var(--text-bright); }
+
+  .lang-toggle, .theme-toggle {
+    display: flex; border: 1px solid var(--border); border-radius: 6px;
+    overflow: hidden; margin-left: 4px;
+  }
+  .lang-toggle button, .theme-toggle button {
+    background: transparent; border: none; color: var(--text-dim);
+    padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all .2s;
+  }
+  .lang-toggle button.active, .theme-toggle button.active { background: var(--accent); color: #fff; }
+  .lang-toggle button:not(.active):hover, .theme-toggle button:not(.active):hover { color: var(--text-bright); }
+
+  .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 72px 0; }
+  hr { border: none; border-top: 1px solid var(--border); }
+
+  .hero { padding: 120px 0 60px; text-align: center; }
+  .hero .badge {
+    display: inline-block; padding: 5px 16px; border-radius: 20px;
+    border: 1px solid var(--accent); color: var(--accent);
+    font-size: 12px; font-weight: 700; letter-spacing: 2px; margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: 44px; font-weight: 800; color: var(--text-bright);
+    line-height: 1.2; letter-spacing: -1px; margin-bottom: 16px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p { font-size: 16px; color: var(--text-dim); max-width: 560px; margin: 0 auto 40px; }
+
+  .stat-row { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+  .stat-item { text-align: center; }
+  .stat-item .num { font-size: 42px; font-weight: 800; color: var(--text-bright); line-height: 1.1; }
+  .stat-item .unit { font-size: 14px; color: var(--text-dim); font-weight: 400; }
+  .stat-item .label { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .sec-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--accent); margin-bottom: 8px; }
+  .sec-title { font-size: 28px; font-weight: 700; color: var(--text-bright); letter-spacing: -0.4px; margin-bottom: 40px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 24px;
+    transition: border-color .3s;
+  }
+  .card:hover { border-color: var(--card-hover-border); }
+  .card .icon { font-size: 24px; margin-bottom: 12px; }
+  .card h3 { font-size: 16px; color: var(--text-bright); margin-bottom: 6px; font-weight: 700; }
+  .card .desc { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; text-align: center;
+  }
+  .stat-card .big { font-size: 36px; font-weight: 800; color: var(--text-bright); }
+  .stat-card .big.danger { color: var(--red); }
+  .stat-card .unit { font-size: 13px; color: var(--text-dim); }
+  .stat-card .tagline { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  .edco-chain {
+    display: flex; align-items: stretch; gap: 0;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .edco-link {
+    flex: 1; padding: 24px 16px; text-align: center;
+    background: var(--surface); position: relative;
+    border-right: 1px solid var(--border);
+  }
+  .edco-link:last-child { border-right: none; }
+  .edco-link .letter { font-size: 32px; font-weight: 800; margin-bottom: 6px; }
+  .edco-link:nth-child(1) .letter { color: var(--accent); }
+  .edco-link:nth-child(2) .letter { color: var(--amber); }
+  .edco-link:nth-child(3) .letter { color: var(--green); }
+  .edco-link:nth-child(4) .letter { color: var(--cyan); }
+  .edco-link .name { font-size: 15px; color: var(--text-bright); font-weight: 700; margin-bottom: 4px; }
+  .edco-link .question { font-size: 12px; color: var(--text-dim); }
+  .edco-link .example { font-size: 11px; color: var(--text-dim); margin-top: 8px; opacity: 0.7; white-space: pre-line; }
+
+  .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .ba-box {
+    border-radius: var(--radius); padding: 24px;
+    font-family: "SF Mono", "Fira Code", monospace; font-size: 13px;
+    line-height: 1.8;
+  }
+  .ba-before { background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
+  .ba-after { background: var(--surface2); border: 1px solid var(--accent); color: var(--text-bright); }
+  .ba-box .ba-label {
+    font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    margin-bottom: 12px; display: block;
+  }
+
+  .source-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .source-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; border-radius: var(--radius-sm);
+    background: var(--surface); border: 1px solid var(--border);
+  }
+  .source-item .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-ai { background: var(--accent); }
+  .dot-email { background: var(--green); }
+  .dot-im { background: var(--amber); }
+  .dot-doc { background: var(--cyan); }
+  .source-item .info { font-size: 14px; color: var(--text-bright); font-weight: 600; }
+  .source-item .sub { font-size: 11px; color: var(--text-dim); }
+
+  .pricing-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .pricing-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px 24px; text-align: center;
+  }
+  .pricing-card.featured { border-color: var(--accent); background: var(--surface2); }
+  .pricing-card .tier { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 1px; margin-bottom: 8px; }
+  .pricing-card .price { font-size: 32px; font-weight: 800; color: var(--text-bright); }
+  .pricing-card .price span { font-size: 14px; font-weight: 400; color: var(--text-dim); }
+  .pricing-card ul { text-align: left; margin-top: 20px; list-style: none; }
+  .pricing-card ul li { font-size: 13px; color: var(--text-dim); padding: 5px 0; }
+  .pricing-card ul li::before { content: "✓ "; color: var(--green); }
+
+  .tbl { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .tbl th { background: var(--surface); padding: 12px 16px; font-size: 13px; font-weight: 700; color: var(--text-bright); text-align: left; border-bottom: 1px solid var(--border); }
+  .tbl td { padding: 12px 16px; font-size: 13px; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl .yes { color: var(--green); font-weight: 700; }
+  .tbl .no { color: var(--red); }
+
+  .timeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .tl-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 24px; text-align: center;
+  }
+  .tl-item .year { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 1px; margin-bottom: 8px; }
+  .tl-item .ratio { font-size: 22px; font-weight: 700; color: var(--text-bright); margin-bottom: 8px; }
+  .tl-item .ratio span { color: var(--text-dim); font-weight: 400; }
+  .tl-item .desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+  footer { border-top: 1px solid var(--border); padding: 36px 0; text-align: center; color: var(--text-dim); font-size: 12px; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .tag-e { background: var(--accent-glow); color: var(--accent); }
+  .tag-d { background: var(--accent-glow2); color: var(--amber); }
+  .tag-c { background: var(--accent-glow3); color: var(--green); }
+  .tag-o { background: var(--accent-glow4); color: var(--cyan); }
+
+  .highlight { color: var(--text-bright); font-weight: 600; }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 28px; }
+    .sec-title { font-size: 22px; }
+    .grid-2, .grid-3, .grid-4, .before-after, .pricing-row, .timeline, .source-row .edco-chain { grid-template-columns: 1fr; }
+    .edco-chain { flex-direction: column; }
+    .edco-link { border-right: none; border-bottom: 1px solid var(--border); }
+    nav .nav-links a:not(.lang-toggle *) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Decision<span>Hub</span></div>
+  <div class="nav-links">
+    <a href="#problem" data-i18n="nav_problem">痛点</a>
+    <a href="#solution" data-i18n="nav_solution">方案</a>
+    <a href="#model" data-i18n="nav_model">模型</a>
+    <a href="#delivery" data-i18n="nav_delivery">交付</a>
+    <a href="mailto:2819699195@qq.com" data-i18n="nav_contact">联系</a>
+    <div class="theme-toggle">
+      <button id="btn-night" class="active" onclick="switchTheme('night')" title="暗夜">暗</button>
+      <button id="btn-aurora" onclick="switchTheme('aurora')" title="极光">极</button>
+    </div>
+    <div class="lang-toggle">
+      <button id="btn-zh" class="active" onclick="switchLang('zh')">中</button>
+      <button id="btn-en" onclick="switchLang('en')">EN</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="container">
+    <div class="badge" data-i18n="badge">DECISION INTELLIGENCE PLATFORM</div>
+    <h1 data-i18n="hero_title">企业最有价值的知识<br>不应随人才流动而<em>消失</em></h1>
+    <p data-i18n="hero_sub">多源采集 · AI 提炼 · 结构化沉淀 · 持续运营</p>
+    <div class="stat-row">
+      <div class="stat-item">
+        <div class="num">95<span class="unit">%</span></div>
+        <div class="label" data-i18n="stat_retention">知识保留率</div>
+      </div>
+      <div class="stat-item">
+        <div class="num">4</div>
+        <div class="label" data-i18n="stat_types">核心决策对象类型</div>
+      </div>
+      <div class="stat-item">
+        <div class="num">4</div>
+        <div class="label" data-i18n="stat_sources">大采集源</div>
+      </div>
+      <div class="stat-item" style="display: none;">
+        <div class="num">$1<span class="unit">/月</span></div>
+        <div class="label" data-i18n="stat_cost">50人团队 AI 成本</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ PROBLEM ══ -->
+<section id="problem">
+  <div class="container">
+    <div class="sec-label" data-i18n="sec_problem">问题</div>
+    <div class="sec-title" data-i18n="problem_title">企业知识的结构性流失</div>
+
+    <div class="grid-3" style="margin-bottom: 32px;">
+      <div class="stat-card">
+        <div class="big">250<span class="unit" data-i18n="problem_stat1_unit">条/天</span></div>
+        <div class="tagline" data-i18n="problem_stat1">50人团队日均 AI 决策记录</div>
+      </div>
+      <div class="stat-card">
+        <div class="big">66,000<span class="unit" data-i18n="problem_stat2_unit">条/年</span></div>
+        <div class="tagline" data-i18n="problem_stat2">累计 AI 知识产出</div>
+      </div>
+      <div class="stat-card">
+        <div class="big danger">~80<span class="unit">%</span></div>
+        <div class="tagline" data-i18n="problem_stat3">随人员流动不可检索</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px;">
+        <div style="font-size:14px; color:var(--text-bright); font-weight:600; margin-bottom:8px;" data-i18n="scene_a_title">场景 A：重复造轮子</div>
+        <div style="font-size:12px; color:var(--text-dim); line-height:1.7;" data-i18n="scene_a_desc">张三用 AI 花 3 天解决部署难题 → 离职 → 李四入职遇到同样问题 → 再花 3 天从零开始</div>
+        <div style="margin-top:12px; padding:8px 12px; background:var(--red-glow); border-radius:4px; font-size:11px; color:var(--red);" data-i18n="scene_a_tag">知识在，但不可见。经验在，但无法复用。</div>
+      </div>
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px;">
+        <div style="font-size:14px; color:var(--text-bright); font-weight:600; margin-bottom:8px;" data-i18n="scene_b_title">场景 B：决策失忆</div>
+        <div style="font-size:12px; color:var(--text-dim); line-height:1.7;" data-i18n="scene_b_desc">老板问"去年为什么暂停项目 A？"→ 决策过程在已离职员工的脑子里 → 没有人能完整回答</div>
+        <div style="margin-top:12px; padding:8px 12px; background:var(--red-glow); border-radius:4px; font-size:11px; color:var(--red);" data-i18n="scene_b_tag">没有决策档案 = 没有复盘能力。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ INSIGHT ══ -->
+<section>
+  <div class="container">
+    <div class="sec-label" data-i18n="sec_insight">洞察</div>
+    <div class="sec-title" data-i18n="insight_title">最有价值的知识，最不结构化</div>
+
+    <div class="grid-2">
+      <div>
+        <div style="font-size:12px; font-weight:700; color:var(--text-dim); letter-spacing:1px; margin-bottom:8px;" data-i18n="insight_left_header">ERP / CRM / 知识库 能记录的</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:12px 16px; font-size:13px; color:var(--text-bright);">📦 订单 · 出入库 · 凭证</div>
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:12px 16px; font-size:13px; color:var(--text-bright);">👤 客户信息 · 跟进记录</div>
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:12px 16px; font-size:13px; color:var(--text-bright);">📋 SOP · 规章制度</div>
+        </div>
+        <div style="font-size:11px; color:var(--text-dim); margin-top:12px;" data-i18n="insight_left_foot">天然结构化 —— 不录就没法工作</div>
+      </div>
+      <div>
+        <div style="font-size:12px; font-weight:700; color:var(--text-dim); letter-spacing:1px; margin-bottom:8px;" data-i18n="insight_right_header">但企业真正损失的是</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:var(--surface2); border:1px solid var(--accent); border-radius:6px; padding:12px 16px; font-size:13px; color:var(--text-bright);" data-i18n="insight_right_item1">❓ 为什么放弃方案 B？</div>
+          <div style="background:var(--surface2); border:1px solid var(--accent); border-radius:6px; padding:12px 16px; font-size:13px; color:var(--text-bright);" data-i18n="insight_right_item2">❓ 为什么客户流失？</div>
+          <div style="background:var(--surface2); border:1px solid var(--accent); border-radius:6px; padding:12px 16px; font-size:13px; color:var(--text-bright);" data-i18n="insight_right_item3">❓ 为什么项目成功？</div>
+        </div>
+        <div style="font-size:11px; color:var(--text-dim); margin-top:12px;" data-i18n="insight_right_foot">天然非结构化 —— 从来没人记录</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ POSITIONING ══ -->
+<section>
+  <div class="container">
+    <div class="sec-label" data-i18n="sec_positioning">定位</div>
+    <div class="sec-title" data-i18n="positioning_title">我们不是 AI 公司</div>
+
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead>
+          <tr><th></th><th data-i18n="pos_col1">传统 SaaS</th><th style="color:var(--accent);">DecisionHub</th></tr>
+        </thead>
+        <tbody>
+          <tr><td data-i18n="pos_r1_label"><strong>卖什么</strong></td><td data-i18n="pos_r1_left">软件功能 + 席位</td><td class="highlight" data-i18n="pos_r1_right">组织决策建设服务</td></tr>
+          <tr><td data-i18n="pos_r2_label"><strong>用户为什么付费</strong></td><td data-i18n="pos_r2_left">AI 很酷</td><td class="highlight" data-i18n="pos_r2_right">避免经验流失 · 避免重复踩坑 · 提高决策质量</td></tr>
+          <tr><td data-i18n="pos_r3_label"><strong>成功指标</strong></td><td data-i18n="pos_r3_left">DAU / 搜索量</td><td class="highlight" data-i18n="pos_r3_right">决策完整度 · 复盘成功率</td></tr>
+          <tr><td data-i18n="pos_r4_label"><strong>数据模型</strong></td><td data-i18n="pos_r4_left">Document / Message</td><td><span class="tag tag-e">E</span><span class="tag tag-d">D</span><span class="tag tag-c">C</span><span class="tag tag-o">O</span> <span data-i18n="pos_r4_right">决策对象</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ SOLUTION ══ -->
+<section id="solution">
+  <div class="container">
+    <div class="sec-label" data-i18n="sec_solution">方案</div>
+    <div class="sec-title" data-i18n="solution_title">5 层流水线</div>
+
+    <div class="source-row" style="margin-bottom: 24px;display: none;">
+      <div class="source-item"><span class="dot dot-ai"></span><div><div class="info" data-i18n="src_ai">AI 聊天</div><div class="sub">ChatGPT · Claude · DeepSeek</div></div></div>
+      <div class="source-item"><span class="dot dot-email"></span><div><div class="info" data-i18n="src_email">邮件</div><div class="sub">IMAP · Gmail / Outlook / 企业邮箱</div></div></div>
+      <div class="source-item"><span class="dot dot-im"></span><div><div class="info" data-i18n="src_im">即时消息</div><div class="sub">飞书 Bot · 企业微信 Webhook</div></div></div>
+      <div class="source-item"><span class="dot dot-doc"></span><div><div class="info" data-i18n="src_doc">文档</div><div class="sub">目录监听 · 手动上传</div></div></div>
+    </div>
+
+     <div class="source-row" style="margin-bottom: 24px;">
+      <div class="source-item"><span class="dot dot-ai"></span><div><div class="info" data-i18n="src_ai_title">决策推演</div><div class="sub" data-i18n="src_ai_sub">与 AI 探讨方案取舍、技术选型、故障排查的完整思考链</div></div></div>
+      <div class="source-item"><span class="dot dot-email"></span><div><div class="info" data-i18n="src_email_title">商务往来</div><div class="sub" data-i18n="src_email_sub">客户沟通、供应商谈判、对外承诺与合同讨论</div></div></div>
+      <div class="source-item"><span class="dot dot-im"></span><div><div class="info" data-i18n="src_im_title">团队协作</div><div class="sub" data-i18n="src_im_sub">日常决策、快速承诺、跨职能协调的执行链条</div></div></div>
+      <div class="source-item"><span class="dot dot-doc"></span><div><div class="info" data-i18n="src_doc_title">知识沉淀</div><div class="sub" data-i18n="src_doc_sub">项目规划、会议纪要、复盘总结、技术规范</div></div></div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">1</div>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 20px;">
+          <span style="font-weight:700;color:var(--text-bright);" data-i18n="step1_title">多源自动采集</span>
+          <span style="font-size:12px;color:var(--text-dim);margin-left:12px;" data-i18n="step1_desc">静默运行，不改变工作习惯</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">2</div>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 20px;">
+          <span style="font-weight:700;color:var(--text-bright);" data-i18n="step2_title">统一归一化</span>
+          <span style="font-size:12px;color:var(--text-dim);margin-left:12px;" data-i18n="step2_desc">所有来源 → NormalizedMessage 统一格式</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-glow2);color:var(--amber);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">3</div>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--amber);border-radius:var(--radius-sm);padding:14px 20px;">
+          <span style="font-weight:700;color:var(--text-bright);" data-i18n="step3_title">EDCO 智能提取</span>
+          <span style="font-size:12px;color:var(--text-dim);margin-left:12px;" data-i18n="step3_desc">LLM 提取 Event / Decision / Commitment / Outcome + 完整度评分</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-glow3);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">4</div>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 20px;">
+          <span style="font-weight:700;color:var(--text-bright);" data-i18n="step4_title">人工确认</span>
+          <span style="font-size:12px;color:var(--text-dim);margin-left:12px;" data-i18n="step4_desc">审查队列 → 补充缺失 → 确认/拒绝 · 每周 1-2 小时</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-glow4);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">5</div>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 20px;">
+          <span style="font-weight:700;color:var(--text-bright);" data-i18n="step5_title">交付物自动生成</span>
+          <span style="font-size:12px;color:var(--text-dim);margin-left:12px;" data-i18n="step5_desc">周报 · 决策档案 · 承诺看板 · 经验库</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ EDCO ══ -->
+<section id="model">
+  <div class="container">
+    <div class="sec-label" data-i18n="sec_model">模型</div>
+    <div class="sec-title" data-i18n="model_title">EDCO：企业决策的四根支柱</div>
+
+    <div class="edco-chain" style="margin-bottom: 32px;">
+      <div class="edco-link">
+        <div class="letter">E</div>
+        <div class="name">Event</div>
+        <div class="question" data-i18n="edco_e_q">发生了什么？</div>
+        <div class="example" data-i18n="edco_e_ex">客户提出新需求
+服务器宕机
+张三离职</div>
+      </div>
+      <div class="edco-link">
+        <div class="letter">D</div>
+        <div class="name">Decision</div>
+        <div class="question" data-i18n="edco_d_q">决定了什么？</div>
+        <div class="example" data-i18n="edco_d_ex">采用方案 B
+暂停项目 A
+新增 50 万预算</div>
+      </div>
+      <div class="edco-link">
+        <div class="letter">C</div>
+        <div class="name">Commitment</div>
+        <div class="question" data-i18n="edco_c_q">谁承诺了什么？</div>
+        <div class="example" data-i18n="edco_c_ex">张三 7/1 前完成开发
+李四跟进客户 B</div>
+      </div>
+      <div class="edco-link">
+        <div class="letter">O</div>
+        <div class="name">Outcome</div>
+        <div class="question" data-i18n="edco_o_q">最终结果？</div>
+        <div class="example" data-i18n="edco_o_ex">项目提前上线
+成本下降 15%
+方案 B 效果低于预期</div>
+      </div>
+    </div>
+
+    <div class="before-after">
+      <div class="ba-box ba-before">
+        <span class="ba-label" style="color:var(--text-dim);" data-i18n="ba_before_label">V1 存储 — Message</span>
+        <span data-i18n="ba_before_content">张三：我下周完成接口开发
+李四：行，那我等你那边好了再测</span>
+        <br><span style="font-size:11px;opacity:0.5;" data-i18n="ba_before_foot">→ 两条散落的聊天记录。搜索能找到，但不知道承诺是否兑现。</span>
+      </div>
+      <div class="ba-box ba-after">
+        <span class="ba-label" style="color:var(--accent);" data-i18n="ba_after_label">V2 存储 — Memory Object</span>
+        <span class="tag tag-c">Commitment</span><br>
+        owner: <span style="color:var(--green);" data-i18n="ba_after_owner">张三</span><br>
+        content: <span style="color:var(--green);" data-i18n="ba_after_content">完成接口开发</span><br>
+        deadline: <span style="color:var(--amber);">2026-07-03</span><br>
+        status: <span style="color:var(--red);">overdue</span><br>
+        <span style="font-size:11px;opacity:0.5;" data-i18n="ba_after_foot">→ 结构化对象。可追踪、可关联、可复盘。逾期自动推送周报。</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ DELIVERY ══ -->
+<section id="delivery">
+  <div class="container">
+    <div class="sec-label" data-i18n="sec_delivery">交付</div>
+    <div class="sec-title" data-i18n="delivery_title">客户拿到什么</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="icon">📋</div>
+        <h3 data-i18n="del1_title">决策周报</h3>
+        <div class="desc" data-i18n="del1_desc">每周一自动生成。本周决策 · 承诺状态 · 风险信号 · 经验沉淀。</div>
+        <div style="margin-top:10px;font-size:11px;color:var(--accent);" data-i18n="del1_tag">前 30 天感知价值的核心交付物</div>
+      </div>
+      <div class="card">
+        <div class="icon">📖</div>
+        <h3 data-i18n="del2_title">决策档案</h3>
+        <div class="desc" data-i18n="del2_desc">决策人 · 原因 · 备选方案 · 执行情况 · 最终结果。</div>
+        <div style="margin-top:10px;font-size:11px;color:var(--accent);" data-i18n="del2_tag">"去年为什么暂停项目 A？"→ 秒答</div>
+      </div>
+      <div class="card">
+        <div class="icon">✅</div>
+        <h3 data-i18n="del3_title">承诺看板</h3>
+        <div class="desc" data-i18n="del3_desc">进行中 / 已完成 / 逾期 三列看板。逾期自动标红，推送到周报。</div>
+        <div style="margin-top:10px;font-size:11px;color:var(--accent);" data-i18n="del3_tag">老板不用追问"这件事谁在做"</div>
+      </div>
+      <div class="card">
+        <div class="icon">📊</div>
+        <h3 data-i18n="del4_title">项目经验库</h3>
+        <div class="desc" data-i18n="del4_desc">项目延期 TOP 原因 · 客户流失 TOP 原因 · 项目成功 TOP 经验。</div>
+        <div style="margin-top:10px;font-size:11px;color:var(--accent);" data-i18n="del4_tag">3-6个月积累后开始显现价值</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ COMPETITION ══ -->
+<section>
+  <div class="container">
+    <div class="sec-label" data-i18n="sec_competition">壁垒</div>
+    <div class="sec-title" data-i18n="competition_title">为什么不是又一个知识库</div>
+
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead>
+          <tr><th></th><th data-i18n="comp_h1">传统知识库</th><th data-i18n="comp_h2">企业网盘</th><th data-i18n="comp_h3">AI 聊天工具</th><th style="color:var(--accent);">DecisionHub</th></tr>
+        </thead>
+        <tbody>
+          <tr><td data-i18n="comp_r1"><strong>数据来源</strong></td><td data-i18n="comp_r1_1">人工录入</td><td data-i18n="comp_r1_2">人工上传</td><td data-i18n="comp_r1_3">单一平台</td><td class="yes" data-i18n="comp_r1_4">自动多源采集</td></tr>
+          <tr><td data-i18n="comp_r2"><strong>数据模型</strong></td><td data-i18n="comp_r2_1">文档/条目</td><td data-i18n="comp_r2_2">文件树</td><td data-i18n="comp_r2_3">对话记录</td><td class="yes" data-i18n="comp_r2_4">EDCO 决策对象</td></tr>
+          <tr><td data-i18n="comp_r3"><strong>结构化</strong></td><td class="no" data-i18n="comp_r3_1">依赖人</td><td class="no" data-i18n="comp_r3_2">依赖人</td><td class="no" data-i18n="comp_r3_3">无</td><td class="yes" data-i18n="comp_r3_4">AI 提取 + 人确认</td></tr>
+          <tr><td data-i18n="comp_r4"><strong>决策追溯</strong></td><td class="no">✗</td><td class="no">✗</td><td data-i18n="comp_r4_3">部分</td><td class="yes" data-i18n="comp_r4_4">完整 E→D→C→O 链</td></tr>
+          <tr><td data-i18n="comp_r5"><strong>持续运营</strong></td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes" data-i18n="comp_r5_4">审查队列 + 周报 + 完整度追踪</td></tr>
+          <tr><td data-i18n="comp_r6"><strong>输出形式</strong></td><td data-i18n="comp_r6_1">搜索+浏览</td><td data-i18n="comp_r6_2">文件夹</td><td data-i18n="comp_r6_3">聊天界面</td><td class="yes" data-i18n="comp_r6_4">周报+档案+看板+经验库</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ TECH ══ -->
+<section>
+  <div class="container">
+    <div class="sec-label" data-i18n="sec_tech">技术</div>
+    <div class="sec-title" data-i18n="tech_title">本地优先 · 平滑扩展 · 模型无关</div>
+
+    <div class="grid-3">
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:700;color:var(--text-bright);margin-bottom:8px;">🖥 <span data-i18n="tech_deploy">部署</span></div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:2;" data-i18n="tech_deploy_items">个人本地 →
+局域网共享 →
+Docker →
+HTTPS + Nginx</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:700;color:var(--text-bright);margin-bottom:8px;">💾 <span data-i18n="tech_storage">存储</span></div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:2;" data-i18n="tech_storage_items">SQLite+ChromaDB →
+PostgreSQL+pgvector →
+Milvus
+改一行配置升级</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:700;color:var(--text-bright);margin-bottom:8px;">🧠 <span data-i18n="tech_model">模型</span></div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:2;" data-i18n="tech_model_items">Embedding: BGE / OpenAI
+提取: DeepSeek / OpenAI
+模型是可替换部件</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container" data-i18n="footer">
+    DecisionHub · 企业决策与组织智慧平台<br>
+    AI 只是工具。组织学习能力才是产品。
+  </div>
+</footer>
+
+<script>
+/* ── Theme ── */
+(function(){
+  const saved = localStorage.getItem('decisionhub-theme') || 'night';
+  document.documentElement.setAttribute('data-theme', saved);
+  window.switchTheme = function(t){
+    if (t === document.documentElement.getAttribute('data-theme')) return;
+    document.documentElement.setAttribute('data-theme', t);
+    document.getElementById('btn-night').classList.toggle('active', t==='night');
+    document.getElementById('btn-aurora').classList.toggle('active', t==='aurora');
+    localStorage.setItem('decisionhub-theme', t);
+  };
+  document.getElementById('btn-night').classList.toggle('active', saved==='night');
+  document.getElementById('btn-aurora').classList.toggle('active', saved==='aurora');
+})();
+
+const I18N = {
+  zh: {
+    nav_problem:'痛点', nav_solution:'方案', nav_model:'模型', nav_delivery:'交付', nav_contact:'联系',
+    badge:'DECISION INTELLIGENCE PLATFORM',
+    hero_title:'企业最有价值的知识<br>不应随人才流动而<em>消失</em>',
+    hero_sub:'多源采集 · AI 提炼 · 结构化沉淀 · 持续运营',
+    stat_retention:'知识保留率', stat_types:'核心决策对象类型', stat_sources:'大采集源', stat_cost:'50人团队 AI 成本',
+
+    sec_problem:'问题', problem_title:'企业知识的结构性流失',
+    problem_stat1:'50人团队日均 AI 决策记录', problem_stat1_unit:'条/天',
+    problem_stat2:'累计 AI 知识产出', problem_stat2_unit:'条/年',
+    problem_stat3:'随人员流动不可检索',
+    scene_a_title:'场景 A：重复造轮子',
+    scene_a_desc:'张三用 AI 花 3 天解决部署难题 → 离职 → 李四入职遇到同样问题 → 再花 3 天从零开始',
+    scene_a_tag:'知识在，但不可见。经验在，但无法复用。',
+    scene_b_title:'场景 B：决策失忆',
+    scene_b_desc:'老板问"去年为什么暂停项目 A？"→ 决策过程在已离职员工的脑子里 → 没有人能完整回答',
+    scene_b_tag:'没有决策档案 = 没有复盘能力。',
+
+    sec_insight:'洞察', insight_title:'最有价值的知识，最不结构化',
+    insight_left_header:'ERP / CRM / 知识库 能记录的',
+    insight_left_foot:'天然结构化 —— 不录就没法工作',
+    insight_right_header:'但企业真正损失的是',
+    insight_right_item1:'❓ 为什么放弃方案 B？',
+    insight_right_item2:'❓ 为什么客户流失？',
+    insight_right_item3:'❓ 为什么项目成功？',
+    insight_right_foot:'天然非结构化 —— 从来没人记录',
+
+    sec_positioning:'定位', positioning_title:'我们不是 AI 公司',
+    pos_col1:'传统 SaaS',
+    pos_r1_label:'<strong>卖什么</strong>', pos_r1_left:'软件功能 + 席位', pos_r1_right:'组织决策建设服务',
+    pos_r2_label:'<strong>用户为什么付费</strong>', pos_r2_left:'AI 很酷', pos_r2_right:'避免经验流失 · 避免重复踩坑 · 提高决策质量',
+    pos_r3_label:'<strong>成功指标</strong>', pos_r3_left:'DAU / 搜索量', pos_r3_right:'决策完整度 · 复盘成功率',
+    pos_r4_label:'<strong>数据模型</strong>', pos_r4_left:'Document / Message', pos_r4_right:'决策对象',
+
+    sec_solution:'方案', solution_title:'5 层流水线',
+    src_ai_title:'决策推演', src_ai_sub:'与 AI 探讨方案取舍、技术选型、故障排查的完整思考链',
+    src_email_title:'商务往来', src_email_sub:'客户沟通、供应商谈判、对外承诺与合同讨论',
+    src_im_title:'团队协作', src_im_sub:'日常决策、快速承诺、跨职能协调的执行链条',
+    src_doc_title:'知识沉淀', src_doc_sub:'项目规划、会议纪要、复盘总结、技术规范',
+    step1_title:'多源自动采集', step1_desc:'静默运行，不改变工作习惯',
+    step2_title:'统一归一化', step2_desc:'所有来源 → NormalizedMessage 统一格式',
+    step3_title:'EDCO 智能提取', step3_desc:'提取 Event / Decision / Commitment / Outcome + 完整度评分',
+    step4_title:'人工确认', step4_desc:'审查队列 → 补充缺失 → 确认/拒绝 · 每周 1-2 小时',
+    step5_title:'交付物自动生成', step5_desc:'周报 · 决策档案 · 承诺看板 · 经验库',
+
+    sec_model:'模型', model_title:'EDCO：企业决策的四根支柱',
+    edco_e_q:'发生了什么？', edco_e_ex:'客户提出新需求\n服务器宕机\n张三离职',
+    edco_d_q:'决定了什么？', edco_d_ex:'采用方案 B\n暂停项目 A\n新增 50 万预算',
+    edco_c_q:'谁承诺了什么？', edco_c_ex:'张三 7/1 前完成开发\n李四跟进客户 B',
+    edco_o_q:'最终结果？', edco_o_ex:'项目提前上线\n成本下降 15%\n方案 B 效果低于预期',
+    ba_before_label:'V1 存储 — Message',
+    ba_before_content:'张三：我下周完成接口开发\n李四：行，那我等你那边好了再测',
+    ba_before_foot:'→ 两条散落的聊天记录。搜索能找到，但不知道承诺是否兑现。',
+    ba_after_label:'V2 存储 — Memory Object',
+    ba_after_owner:'张三', ba_after_content:'完成接口开发',
+    ba_after_foot:'→ 结构化对象。可追踪、可关联、可复盘。逾期自动推送周报。',
+
+    sec_delivery:'交付', delivery_title:'客户拿到什么',
+    del1_title:'决策周报', del1_desc:'每周一自动生成。本周决策 · 承诺状态 · 风险信号 · 经验沉淀。',
+    del1_tag:'前 30 天感知价值的核心交付物',
+    del2_title:'决策档案', del2_desc:'决策人 · 原因 · 备选方案 · 执行情况 · 最终结果。',
+    del2_tag:'"去年为什么暂停项目 A？"→ 秒答',
+    del3_title:'承诺看板', del3_desc:'进行中 / 已完成 / 逾期 三列看板。逾期自动标红，推送到周报。',
+    del3_tag:'老板不用追问"这件事谁在做"',
+    del4_title:'项目经验库', del4_desc:'项目延期 TOP 原因 · 客户流失 TOP 原因 · 项目成功 TOP 经验。',
+    del4_tag:'3-6个月积累后开始显现价值',
+
+    sec_competition:'壁垒', competition_title:'为什么不是又一个知识库',
+    comp_h1:'传统知识库', comp_h2:'企业网盘', comp_h3:'AI 聊天工具',
+    comp_r1:'<strong>数据来源</strong>', comp_r1_1:'人工录入', comp_r1_2:'人工上传', comp_r1_3:'单一平台', comp_r1_4:'自动多源采集',
+    comp_r2:'<strong>数据模型</strong>', comp_r2_1:'文档/条目', comp_r2_2:'文件树', comp_r2_3:'对话记录', comp_r2_4:'EDCO 决策对象',
+    comp_r3:'<strong>结构化</strong>', comp_r3_1:'依赖人', comp_r3_2:'依赖人', comp_r3_3:'无', comp_r3_4:'AI 提取 + 人确认',
+    comp_r4:'<strong>决策追溯</strong>', comp_r4_3:'部分', comp_r4_4:'完整 E→D→C→O 链',
+    comp_r5:'<strong>持续运营</strong>', comp_r5_4:'审查队列 + 周报 + 完整度追踪',
+    comp_r6:'<strong>输出形式</strong>', comp_r6_1:'搜索+浏览', comp_r6_2:'文件夹', comp_r6_3:'聊天界面', comp_r6_4:'周报+档案+看板+经验库',
+
+    sec_tech:'技术', tech_title:'本地优先 · 平滑扩展 · 模型无关',
+    tech_deploy:'部署', tech_deploy_items:'个人本地 →\n局域网共享 →\nDocker →\nHTTPS + Nginx',
+    tech_storage:'存储', tech_storage_items:'SQLite+ChromaDB →\nPostgreSQL+pgvector →\nMilvus\n改一行配置升级',
+    tech_model:'模型', tech_model_items:'Embedding: BGE / OpenAI\n提取: DeepSeek / OpenAI\n模型是可替换部件',
+
+    footer:'DecisionHub · 企业决策与组织智慧平台<br>AI 只是工具。组织学习能力才是产品。'
+  },
+  en: {
+    nav_problem:'Problem', nav_solution:'Solution', nav_model:'Model', nav_delivery:'Delivery', nav_contact:'Contact',
+    badge:'DECISION INTELLIGENCE PLATFORM',
+    hero_title:'Your most valuable knowledge<br>shouldn\'t <em>vanish</em> when people leave',
+    hero_sub:'Multi-Source Capture · AI Extraction · Structured Retention · Continuous Operations',
+    stat_retention:'Knowledge Retention', stat_types:'Core Decision Object Types', stat_sources:'Data Sources', stat_cost:'AI Cost for 50p team',
+
+    sec_problem:'Problem', problem_title:'The Structural Loss of Enterprise Knowledge',
+    problem_stat1:'Daily AI decision records (50p)', problem_stat1_unit:'/day',
+    problem_stat2:'Annual AI knowledge output', problem_stat2_unit:'/year',
+    problem_stat3:'Lost after employee turnover',
+    scene_a_title:'Scenario A: Reinventing the Wheel',
+    scene_a_desc:'Zhang spent 3 days solving a deployment issue with AI → He left → Li joins, faces the same problem → Another 3 days from scratch',
+    scene_a_tag:'Knowledge exists, but is invisible. Experience exists, but cannot be reused.',
+    scene_b_title:'Scenario B: Decision Amnesia',
+    scene_b_desc:'CEO asks "Why did we pause Project A last year?" → The reasoning lived in an ex-employee\'s head → No one can fully answer',
+    scene_b_tag:'No decision archive = no retrospective capability.',
+
+    sec_insight:'Insight', insight_title:'The Most Valuable Knowledge Is the Least Structured',
+    insight_left_header:'What ERP / CRM / Knowledge Bases Capture',
+    insight_left_foot:'Naturally structured — work stops without it',
+    insight_right_header:'But what enterprises truly lose',
+    insight_right_item1:'❓ Why was Plan B dropped?',
+    insight_right_item2:'❓ Why did the client churn?',
+    insight_right_item3:'❓ Why did the project succeed?',
+    insight_right_foot:'Naturally unstructured — no one ever records it',
+
+    sec_positioning:'Positioning', positioning_title:'We Are Not an AI Company',
+    pos_col1:'Traditional SaaS',
+    pos_r1_label:'<strong>What we sell</strong>', pos_r1_left:'Features + seats', pos_r1_right:'Organizational decision intelligence',
+    pos_r2_label:'<strong>Why customers pay</strong>', pos_r2_left:'AI is cool', pos_r2_right:'Prevent experience loss · Avoid repeating mistakes · Better decisions',
+    pos_r3_label:'<strong>Success metrics</strong>', pos_r3_left:'DAU / Search volume', pos_r3_right:'Decision completeness · Retrospective success rate',
+    pos_r4_label:'<strong>Data model</strong>', pos_r4_left:'Document / Message', pos_r4_right:'Decision objects',
+
+    sec_solution:'Solution', solution_title:'5-Layer Pipeline',
+    src_ai_title:'Decision Reasoning', src_ai_sub:'Exploring trade-offs, technical decisions, and troubleshooting with AI',
+    src_email_title:'Business Correspondence', src_email_sub:'Client communication, vendor negotiations, external commitments',
+    src_im_title:'Team Collaboration', src_im_sub:'Daily decisions, quick commitments, cross-functional execution',
+    src_doc_title:'Knowledge Archive', src_doc_sub:'Project plans, meeting notes, retrospectives, technical specs',
+    step1_title:'Multi-Source Collection', step1_desc:'Silent operation, zero workflow disruption',
+    step2_title:'Unified Normalization', step2_desc:'All sources → NormalizedMessage format',
+    step3_title:'EDCO Extraction', step3_desc:'extracts Event / Decision / Commitment / Outcome + completeness score',
+    step4_title:'Human Review', step4_desc:'Review queue → fill gaps → confirm/reject · 1-2 hrs/week',
+    step5_title:'Auto-Generated Deliverables', step5_desc:'Weekly report · Decision archive · Commitment board · Experience library',
+
+    sec_model:'Model', model_title:'EDCO: The Four Pillars of Enterprise Decision Intelligence',
+    edco_e_q:'What happened?', edco_e_ex:'Client requests new feature\nServer outage\nZhang resigns',
+    edco_d_q:'What was decided?', edco_d_ex:'Adopt Plan B\nSuspend Project A\nApprove $50K budget',
+    edco_c_q:'Who committed to what?', edco_c_ex:'Zhang: finish API by 7/1\nLi: follow up with Client B',
+    edco_o_q:'What was the outcome?', edco_o_ex:'Project delivered early\nCost reduced 15%\nPlan B underperformed',
+    ba_before_label:'V1 stores — Message',
+    ba_before_content:'Zhang: I\'ll finish the API next week\nLi: OK, I\'ll test after you\'re done',
+    ba_before_foot:'→ Two scattered chat messages. Searchable, but no way to track if the commitment was fulfilled.',
+    ba_after_label:'V2 stores — Memory Object',
+    ba_after_owner:'Zhang', ba_after_content:'Finish API development',
+    ba_after_foot:'→ Structured object. Traceable, relatable, reviewable. Overdue auto-pushed to weekly report.',
+
+    sec_delivery:'Delivery', delivery_title:'What Customers Actually Get',
+    del1_title:'Decision Weekly Report', del1_desc:'Auto-generated every Monday. Weekly decisions · commitment status · risk signals · lessons learned.',
+    del1_tag:'The core deliverable for perceiving value in the first 30 days',
+    del2_title:'Decision Archive', del2_desc:'Decision maker · rationale · alternatives · execution · outcome.',
+    del2_tag:'"Why did we pause Project A?" → answered in seconds',
+    del3_title:'Commitment Board', del3_desc:'In Progress / Done / Overdue — three-column board. Overdue auto-flagged and pushed to weekly report.',
+    del3_tag:'No more "Who\'s handling this?" from the CEO',
+    del4_title:'Experience Library', del4_desc:'Top causes of project delays · Top causes of client churn · Top success factors.',
+    del4_tag:'Value emerges after 3-6 months of accumulation',
+
+    sec_competition:'Moat', competition_title:'Why This Is Not Just Another Knowledge Base',
+    comp_h1:'Knowledge Base', comp_h2:'Enterprise Drive', comp_h3:'AI Chat Tool',
+    comp_r1:'<strong>Data source</strong>', comp_r1_1:'Manual entry', comp_r1_2:'Manual upload', comp_r1_3:'Single platform', comp_r1_4:'Auto multi-source',
+    comp_r2:'<strong>Data model</strong>', comp_r2_1:'Docs/entries', comp_r2_2:'File tree', comp_r2_3:'Chat logs', comp_r2_4:'EDCO decision objects',
+    comp_r3:'<strong>Structuring</strong>', comp_r3_1:'Human', comp_r3_2:'Human', comp_r3_3:'None', comp_r3_4:'AI + human review',
+    comp_r4:'<strong>Decision trace</strong>', comp_r4_3:'Partial', comp_r4_4:'Full E→D→C→O chain',
+    comp_r5:'<strong>Operations</strong>', comp_r5_4:'Review queue + weekly report + completeness tracking',
+    comp_r6:'<strong>Output</strong>', comp_r6_1:'Search+browse', comp_r6_2:'Folders', comp_r6_3:'Chat UI', comp_r6_4:'Report+archive+board+library',
+
+    sec_tech:'Tech', tech_title:'Local-First · Scalable · Model-Agnostic',
+    tech_deploy:'Deploy', tech_deploy_items:'Local →\nLAN →\nDocker →\nHTTPS + Nginx',
+    tech_storage:'Storage', tech_storage_items:'SQLite+ChromaDB →\nPostgreSQL+pgvector →\nMilvus\nOne-line config upgrade',
+    tech_model:'Models', tech_model_items:'Embedding: BGE / OpenAI\nExtraction: DeepSeek / OpenAI\nModels are swappable parts',
+
+    footer:'DecisionHub · Enterprise Decision Intelligence Platform<br>AI is the tool. Organizational learning is the product.'
+  }
+};
+
+let currentLang = 'zh';
+
+function switchLang(lang) {
+  if (lang === currentLang) return;
+  currentLang = lang;
+  document.getElementById('btn-zh').classList.toggle('active', lang === 'zh');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  const dict = I18N[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    if (dict[el.getAttribute('data-i18n')] !== undefined) {
+      el.innerHTML = dict[el.getAttribute('data-i18n')];
+    }
+  });
+}
+
+if (navigator.language.startsWith('en')) switchLang('en');
+</script>
+</body>
+</html>

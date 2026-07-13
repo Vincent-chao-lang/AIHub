@@ -6,6 +6,10 @@
 <title>AI Memory Hub Enterprise — 企业 AI 知识资产平台</title>
 <style>
   :root {
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  [data-theme="night"] {
     --bg: #0a0a0f;
     --surface: #13131a;
     --surface2: #1a1a24;
@@ -16,12 +20,36 @@
     --accent: #6366f1;
     --accent2: #8b5cf6;
     --accent-glow: rgba(99, 102, 241, 0.3);
+    --accent-glow2: rgba(139, 92, 246, 0.3);
+    --accent-glow3: rgba(34, 197, 94, 0.2);
+    --accent-glow4: rgba(239, 68, 68, 0.15);
     --green: #22c55e;
     --green-glow: rgba(34, 197, 94, 0.3);
     --amber: #f59e0b;
     --red: #ef4444;
-    --radius: 12px;
-    --radius-sm: 8px;
+    --nav-bg: rgba(10, 10, 15, 0.85);
+    --grid-line: rgba(255,255,255,.02);
+  }
+  [data-theme="aurora"] {
+    --bg: #f4f4f8;
+    --surface: #ffffff;
+    --surface2: #f0f0f5;
+    --border: #e2e2ea;
+    --text: #58586a;
+    --text-dim: #9090a0;
+    --text-bright: #1a1a2e;
+    --accent: #0d9488;
+    --accent2: #14b8a6;
+    --accent-glow: rgba(13, 148, 136, 0.25);
+    --accent-glow2: rgba(13, 148, 136, 0.2);
+    --accent-glow3: rgba(34, 197, 94, 0.15);
+    --accent-glow4: rgba(239, 68, 68, 0.08);
+    --green: #16a34a;
+    --green-glow: rgba(22, 163, 74, 0.2);
+    --amber: #d97706;
+    --red: #dc2626;
+    --nav-bg: rgba(244, 244, 248, 0.88);
+    --grid-line: rgba(0,0,0,.04);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -41,8 +69,8 @@
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 60px 60px;
     pointer-events: none;
     z-index: 0;
@@ -77,7 +105,7 @@
     padding: 16px 0;
     transition: background .3s, backdrop-filter .3s;
   }
-  nav.scrolled { background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+  nav.scrolled { background: var(--nav-bg); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
   nav .container { display: flex; align-items: center; justify-content: space-between; }
   .nav-logo { font-size: 18px; font-weight: 700; color: var(--text-bright); display: flex; align-items: center; gap: 8px; }
   .nav-logo .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
@@ -86,8 +114,8 @@
   .nav-links a { color: var(--text-dim); text-decoration: none; font-size: 13px; transition: color .2s; }
   .nav-links a:hover { color: var(--text-bright); }
 
-  /* ── Lang Switch ── */
-  .lang-switch {
+  /* ── Lang / Theme Switch ── */
+  .lang-switch, .theme-toggle {
     display: flex;
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -95,7 +123,7 @@
     overflow: hidden;
     flex-shrink: 0;
   }
-  .lang-switch button {
+  .lang-switch button, .theme-toggle button {
     padding: 5px 12px;
     border: none;
     background: transparent;
@@ -106,11 +134,11 @@
     transition: all .2s;
     font-family: inherit;
   }
-  .lang-switch button.active {
+  .lang-switch button.active, .theme-toggle button.active {
     background: var(--accent);
     color: #fff;
   }
-  .lang-switch button:hover:not(.active) { color: var(--text-bright); }
+  .lang-switch button:hover:not(.active), .theme-toggle button:hover:not(.active) { color: var(--text-bright); }
 
   .nav-cta {
     padding: 8px 20px;
@@ -311,8 +339,8 @@
     font-weight: 600;
     margin-bottom: 12px;
   }
-  .tag.before { background: rgba(239,68,68,.15); color: var(--red); }
-  .tag.after  { background: rgba(34,197,94,.15); color: var(--green); }
+  .tag.before { background: var(--accent-glow4); color: var(--red); }
+  .tag.after  { background: var(--accent-glow3); color: var(--green); }
   .scenario-card p { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
 
   .arch-diagram {
@@ -503,7 +531,13 @@
         <li><a href="#features" data-i18n="nav.features">功能</a></li>
         <li><a href="#deploy" data-i18n="nav.deploy">部署</a></li>
         <li><a href="#roi" data-i18n="nav.roi">ROI</a></li>
+        <li><a href="https://github.com/Vincent-chao-lang/AIHub" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="product.html" style="color:var(--accent);font-weight:700;">企业高级版</a></li>
       </ul>
+      <div class="theme-toggle">
+        <button id="btn-night" class="active">暗</button>
+        <button id="btn-aurora">极</button>
+      </div>
       <div class="lang-switch">
         <button id="langZh" class="active">中</button>
         <button id="langEn">EN</button>
@@ -1024,6 +1058,24 @@ const I18N = {
     'footer': 'AI Memory Hub Enterprise · Enterprise AI Knowledge Asset Platform · 100% Your Data'
   }
 };
+
+// ═══════════════════════════════════════════
+//  Theme Engine
+// ═══════════════════════════════════════════
+(function(){
+  const saved = localStorage.getItem('decisionhub-theme') || 'night';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('btn-night').classList.toggle('active', saved==='night');
+  document.getElementById('btn-aurora').classList.toggle('active', saved==='aurora');
+})();
+function switchTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('btn-night').classList.toggle('active', t==='night');
+  document.getElementById('btn-aurora').classList.toggle('active', t==='aurora');
+  localStorage.setItem('decisionhub-theme', t);
+}
+document.getElementById('btn-night').addEventListener('click', () => switchTheme('night'));
+document.getElementById('btn-aurora').addEventListener('click', () => switchTheme('aurora'));
 
 // ═══════════════════════════════════════════
 //  I18n Engine

@@ -13,7 +13,7 @@ from sqlmodel import SQLModel, Field, Session, text
 from sqlalchemy import Column
 
 from services.vector_store import VectorStore
-from services import embedding
+from services.embedding_provider import get_embedding_provider
 from db.database import engine
 
 logger = logging.getLogger(__name__)
@@ -33,20 +33,45 @@ class VectorMessage(SQLModel, table=True):
 
 
 def _ensure_extension_and_column():
-    """确保 pgvector 扩展和向量列存在。"""
+    """确保 pgvector 扩展和向量列存在（维度根据当前 provider 动态设置）。"""
+    provider = get_embedding_provider()
+    dim = provider.get_dimension()
+
     with Session(engine) as session:
         session.exec(text("CREATE EXTENSION IF NOT EXISTS vector"))
         session.commit()
+
+    # 检查已有向量列的维度是否匹配
+    with Session(engine) as session:
+        try:
+            result = session.exec(text(
+                "SELECT atttypmod FROM pg_attribute "
+                "WHERE attrelid = 'vector_messages'::regclass "
+                "AND attname = 'embedding' AND NOT attisdropped"
+            )).first()
+            if result is not None and result[0] > 0:
+                # pgvector 的 atttypmod = dim + 4，所以实际维度 = atttypmod - 4
+                existing_dim = result[0] - 4
+                if existing_dim != dim:
+                    logger.warning(
+                        f"向量维度不匹配！当前 provider 维度={dim}，"
+                        f"已有列维度={existing_dim}。"
+                        f"请运行 python backend/rebuild_index.py 重建索引"
+                    )
+        except Exception:
+            pass
+
     # 使用原生 SQL 添加向量列（如果不存在）
     with Session(engine) as session:
         try:
             session.exec(text(
-                "ALTER TABLE vector_messages ADD COLUMN IF NOT EXISTS "
-                "embedding vector(384)"
+                f"ALTER TABLE vector_messages ADD COLUMN IF NOT EXISTS "
+                f"embedding vector({dim})"
             ))
             session.commit()
         except Exception:
             session.rollback()
+
     # 创建 HNSW 索引（如果不存在）
     with Session(engine) as session:
         try:
@@ -68,7 +93,7 @@ class PgVectorStore(VectorStore):
     def add(self, msg_id: str, content: str, metadata: dict | None = None):
         try:
             meta = metadata or {}
-            emb = embedding.embed_texts([content])[0]
+            emb = get_embedding_provider().embed_texts([content])[0]
             emb_str = f"[{','.join(str(v) for v in emb)}]"
 
             with Session(engine) as session:
@@ -101,7 +126,7 @@ class PgVectorStore(VectorStore):
 
     def search(self, query: str, top_k: int = 20) -> list[dict]:
         try:
-            query_emb = embedding.embed_query(query)
+            query_emb = get_embedding_provider().embed_query(query)
             emb_str = f"[{','.join(str(v) for v in query_emb)}]"
 
             with Session(engine) as session:
@@ -140,7 +165,7 @@ class PgVectorStore(VectorStore):
         top_k: int = 10,
     ) -> list[dict]:
         try:
-            query_emb = embedding.embed_query(query_text)
+            query_emb = get_embedding_provider().embed_query(query_text)
             emb_str = f"[{','.join(str(v) for v in query_emb)}]"
             exclude_id = exclude_conv_id or conversation_id
 

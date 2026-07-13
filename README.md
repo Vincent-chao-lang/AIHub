@@ -215,7 +215,7 @@ Chrome → chrome://extensions → 开发者模式 → 加载已解压 → 选�
 
 ## 七、 存储与扩展
 
-默认 SQLite + ChromaDB，零配置开箱即用。
+默认 SQLite + ChromaDB + 本地 BGE 模型，零配置开箱即用。
 
 随着团队规模增长，可平滑升级：
 
@@ -224,6 +224,15 @@ SQLite + ChromaDB  →  PostgreSQL + pgvector  →  Milvus
   零配置                改一行 .env                独立集群
   < 10 万条              10-100 万条                 > 100 万条
 ```
+
+Embedding 模型同样支持一行配置切换：
+
+```
+本地 BGE-small（512 维）  →  BGE-large / 其他本地模型  →  OpenAI / 智谱 API
+  默认                            改模型名                    改 EMBEDDING_PROVIDER
+```
+
+切换 embedding 后运行 `python backend/rebuild_index.py` 即可全量重建向量索引。
 
 详细升级路径 → [docs/STORAGE.md](docs/STORAGE.md)
 
@@ -262,7 +271,7 @@ AIHub/
 | POST | `/context` | 图谱驱动上下文生成（含 `max_tokens` 智能截断） |
 | GET | `/projects` | 项目聚合 |
 | GET | `/graph` | 知识图谱数据 |
-| GET | `/stats` | 统计（总数/平台分布/用户统计/向量索引数） |
+| GET | `/stats` | 统计（总数/平台分布/用户统计/向量索引数/embedding 信息） |
 
 ## 十、 设计原则
 

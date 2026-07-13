@@ -10,6 +10,7 @@ from sqlmodel import Session, select, func
 
 from db.database import get_session
 from services.vector_store import get_vector_store
+from services.embedding_provider import get_embedding_provider
 from collections import defaultdict
 
 from models.message import (
@@ -702,4 +703,6 @@ def get_stats(session: Session = Depends(get_session)):
         "by_platform": {p: c for p, c in platforms},
         "by_user": {u or "未标记": c for u, c in users},
         "vector_index_count": get_vector_store().count(),
+        "embedding_provider": get_embedding_provider().name,
+        "embedding_dimension": get_embedding_provider().get_dimension(),
     }
